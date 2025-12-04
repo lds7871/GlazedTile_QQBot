@@ -1,6 +1,0 @@
-DTO
-加入并使用以下import来构建DTO
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-import lombok.Getter;
-import lombok.Setter;

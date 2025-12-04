@@ -1,0 +1,39 @@
+#注：除这些以外，你还需要配置DEEPSEEK_API_KEY于用户环境变量
+
+#========== 代理配置 ==========
+# 是否启用代理（true/false）
+proxy.is.open=false
+# 代理主机地址
+proxy.host=127.0.0.1
+# 代理端口 https
+proxy.port=33210
+# 代理端口 socks
+proxy.port.socks=33211
+
+#========== QQBot配置 ==========
+# 是否启用 NapCat（true/false）
+NapCatIsOpen=true
+
+# NapCat API 基础 URL
+# 本地：http://localhost:3000
+# 远程：http://YOUR_SERVER_IP:3000
+NapCatApiBase=http://0.0.0.0:3000
+
+# NapCat 认证令牌（从 NapCat 配置中获取）
+NapCatAuthToken=YOUR_NAPCAT_AUTH_TOKEN
+
+# QQ 机器人 ID（Napcat 运行的 QQ 号）
+NapcatQQID=YOUR_QQ_BOT_ID
+
+#========== WebSocket配置 ==========
+# 本地 Spring 应用的 WebSocket 端点
+WS_URL_LOCAL=ws://localhost:7090/onebot
+
+# 远程 NapCat 服务器的 WebSocket 端点
+WS_URL_REMOTE=ws://YOUR_SERVER_IP:3001
+
+# 选择要连接的服务器（LOCAL 或 REMOTE）
+WS_URL_SELECT=LOCAL
+
+# WebSocket 认证令牌
+WS_TOKEN=YOUR_WEBSOCKET_TOKEN

@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galgame 游戏列表</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { 
+            height: 100%;
+            width: 100%;
+        }
+        body { 
+            font-family: 'Segoe UI', 'Microsoft YaHei', Arial, sans-serif;
+            background: #ffffff;
+            overflow: hidden;
+        }
+        .wrapper {
+            height: 100vh;
+            width: 100%;
+            padding: 40px 0 40px 5%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .container { 
+            flex: 1;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .header { 
+            text-align: center;
+            flex-shrink: 0;
+            padding-bottom: 20px;
+        }
+        h1 { 
+            color: #1a1a1a;
+            font-size: 2em;
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin: 0;
+        }
+        .subtitle {
+            color: #999;
+            font-size: 0.85em;
+            margin-top: 6px;
+        }
+        .table-wrapper {
+            flex: 1;
+            width: 100%;
+            overflow-y: auto;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        table { 
+            width: 100%;
+            background: white;
+            border-collapse: collapse;
+        }
+        thead {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        th { 
+            background: linear-gradient(135deg, #f8f8f8 0%, #f0f0f0 100%);
+            color: #1a1a1a;
+            padding: 16px;
+            text-align: left;
+            font-weight: 700;
+            font-size: 0.9em;
+            border-bottom: 2px solid #e5e5e5;
+            letter-spacing: 0.5px;
+        }
+        td { 
+            border-bottom: 1px solid #f0f0f0;
+            padding: 14px 16px;
+            vertical-align: middle;
+            color: #333;
+            font-weight: 500;
+            font-size: 0.9em;
+            text-align: left;
+        }
+        tr:last-child td { border-bottom: none; }
+        tbody tr:hover { 
+            background: #f9f9f9;
+            transition: background-color 0.2s ease;
+        }
+        .game-name { 
+            font-weight: 700;
+            color: #1a1a1a;
+            word-wrap: break-word;
+        }
+        .game-banner {
+            text-align: left;
+        }
+        img { 
+            max-width: 100px;
+            height: auto;
+            border-radius: 3px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: transform 0.2s ease;
+        }
+        img:hover {
+            transform: scale(1.05);
+        }
+        .stat-value {
+            text-align: left;
+            color: #666;
+            font-weight: 600;
+        }
+        .rating { 
+            text-align: left;
+            color: #ff9800;
+            font-weight: 700;
+            font-size: 0.95em;
+        }
+        .rating-none { 
+            text-align: left;
+            color: #ccc;
+            font-weight: 500;
+        }
+        .footer-space {
+            flex-shrink: 0;
+            height: 10%;
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <div class="header">
+            <div class="subtitle">数据来源：TouchGal</div>
+        </div>
+        <div class="container">
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 25%;">游戏名称</th>
+                            <th style="width: 20%;">封面图片</th>
+                            <th style="width: 15%;">创建日期</th>
+                            <th style="width: 13%;">浏览</th>
+                            <th style="width: 13%;">下载</th>
+                            <th style="width: 14%;">评分</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="game-name">猫忍之心SPIN！2</td>
+                            <td class="game-banner"><img src="https://cloud.touchgaloss.com/patch/13064/banner/banner.avif" alt="猫忍之心SPIN！2"></td>
+                            <td>2025-11-30</td>
+                            <td class="stat-value">3,111</td>
+                            <td class="stat-value">239</td>
+                            <td class="rating">9.30</td>
+                        </tr>
+                        <tr>
+                            <td class="game-name">我与苍蓝之森的盲眼魔女</td>
+                            <td class="game-banner"><img src="https://cloud.touchgaloss.com/patch/13052/banner/banner.avif" alt="我与苍蓝之森的盲眼魔女"></td>
+                            <td>2025-11-28</td>
+                            <td class="stat-value">14,781</td>
+                            <td class="stat-value">1,009</td>
+                            <td class="rating-none">暂无</td>
+                        </tr>
+                        <tr>
+                            <td class="game-name">虹彩都市</td>
+                            <td class="game-banner"><img src="https://cloud.touchgaloss.com/patch/13042/banner/banner.avif" alt="虹彩都市"></td>
+                            <td>2025-11-28</td>
+                            <td class="stat-value">8,765</td>
+                            <td class="stat-value">644</td>
+                            <td class="rating">8.00</td>
+                        </tr>
+                        <tr>
+                            <td class="game-name">海珂：北境极光</td>
+                            <td class="game-banner"><img src="https://cloud.touchgaloss.com/patch/13024/banner/banner.avif" alt="海珂：北境极光"></td>
+                            <td>2025-11-19</td>
+                            <td class="stat-value">28,372</td>
+                            <td class="stat-value">1,455</td>
+                            <td class="rating">8.00</td>
+                        </tr>
+                        <tr>
+                            <td class="game-name">伦敦旧影</td>
+                            <td class="game-banner"><img src="https://cloud.touchgaloss.com/patch/13023/banner/banner.avif" alt="伦敦旧影"></td>
+                            <td>2025-11-19</td>
+                            <td class="stat-value">12,056</td>
+                            <td class="stat-value">479</td>
+                            <td class="rating-none">暂无</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="footer-space"></div>
+    </div>
+</body>
+</html>

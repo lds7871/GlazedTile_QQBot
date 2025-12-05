@@ -28,7 +28,7 @@ public class MsgSchGreetingTask {
      * cron 表达式：秒 分 小时 日 月 周几
      * "0 0 8 * * ?" 表示每天 08:00:00 执行
      */
-    @Scheduled(cron = "0 0 8 * * ?")
+    @Scheduled(cron = "0 47 9 * * ?")
     public void sendMorningGreeting() {
         // 检查任务是否启用
         if (!NapCatTaskIsOpen.isMsgSchTask) {

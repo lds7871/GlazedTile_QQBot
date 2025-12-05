@@ -8,14 +8,9 @@ import org.springframework.web.client.RestTemplate;
 
 import LDS.Person.dto.request.SendGroupMessageRequest;
 import LDS.Person.dto.request.SendGroupImageRequest;
+import LDS.Person.util.AlcyWebpGet;
 import LDS.Person.util.ImgToUri;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -63,16 +58,7 @@ public class MorningGreetingLogic {
 
             log.info("[MorningGreetingLogic] 获取早安问候文本，长度: {}", morningText.length());
 
-            // 3. 提前获取图片 Data URI（避免每次发送时重复获取）
-            String imageDataUri = null;
-            try {
-                imageDataUri = fetchAndConvertImageToDataUri();
-                log.info("[MorningGreetingLogic] 图片 Data URI 获取成功");
-            } catch (Exception e) {
-                log.warn("[MorningGreetingLogic] 图片获取或转码失败，将继续发送文本消息: {}", e.getMessage());
-            }
-
-            // 4. 依次向每个群组发送问候，间隔 1~3 秒
+            // 3. 依次向每个群组发送问候，间隔 1~3 秒
             for (int i = 0; i < groupIds.size(); i++) {
                 String groupId = groupIds.get(i);
                 try {
@@ -80,14 +66,12 @@ public class MorningGreetingLogic {
                     sendMessageToGroup(groupId, morningText);
                     log.info("[MorningGreetingLogic] 早安问候文本已发送到群组: {}", groupId);
 
-                    // 再发送图片消息（如果获取成功）
-                    if (imageDataUri != null && !imageDataUri.isEmpty()) {
-                        try {
-                            sendImageToGroup(groupId, imageDataUri);
-                            log.info("[MorningGreetingLogic] 早安问候图片已发送到群组: {}", groupId);
-                        } catch (Exception e) {
-                            log.warn("[MorningGreetingLogic] 图片发送到群组 {} 失败，但继续执行", groupId);
-                        }
+                    // 再获取图片、转码、发送图片消息
+                    try {
+                        sendImageToGroup(groupId);
+                        log.info("[MorningGreetingLogic] 早安问候图片已发送到群组: {}", groupId);
+                    } catch (Exception e) {
+                        log.warn("[MorningGreetingLogic] 图片发送到群组 {} 失败，但继续执行", groupId, e);
                     }
 
                     // 如果不是最后一个群组，则随机等待 1~3 秒
@@ -175,132 +159,36 @@ public class MorningGreetingLogic {
     }
 
     /**
-     * 从 https://t.alcy.cc/moez 获取图片 URL 并转码为 Data URI
-     * URL 会重定向到 .webp 格式的图片
-     * 
-     * @return Data URI 字符串
-     */
-    private String fetchAndConvertImageToDataUri() throws Exception {
-        log.info("[MorningGreetingLogic] 开始获取并转码图片");
-
-        String shortUrl = "https://t.alcy.cc/moez";
-        
-        // 1. 获取重定向后的真实 URL（.webp 图片）
-        String realImageUrl = getRedirectUrl(shortUrl);
-        if (realImageUrl == null || realImageUrl.isEmpty()) {
-            throw new Exception("无法获取图片重定向 URL");
-        }
-
-        log.info("[MorningGreetingLogic] 获取到图片 URL: {}", realImageUrl);
-
-        // 2. 下载图片内容
-        byte[] imageBytes = downloadImage(realImageUrl);
-        if (imageBytes == null || imageBytes.length == 0) {
-            throw new Exception("图片下载失败或内容为空");
-        }
-
-        log.info("[MorningGreetingLogic] 图片下载成功，大小: {} 字节", imageBytes.length);
-
-        // 3. 转码为 Base64
-        String base64String = Base64.getEncoder().encodeToString(imageBytes);
-
-        // 4. 构建 Data URI
-        String dataUri = "data:image/webp;base64," + base64String;
-
-        log.info("[MorningGreetingLogic] 图片转码为 Data URI 成功，长度: {} 字符", dataUri.length());
-
-        return dataUri;
-    }
-
-    /**
-     * 获取 URL 重定向后的真实 URL
-     * 用于处理短链接到真实图片 URL 的重定向
-     * 
-     * @param shortUrl 短链接 URL
-     * @return 重定向后的真实 URL
-     */
-    private String getRedirectUrl(String shortUrl) throws Exception {
-        try {
-            URL url = new URL(shortUrl);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("GET");
-            connection.setInstanceFollowRedirects(false);
-            connection.setConnectTimeout(5000);
-            connection.setReadTimeout(5000);
-
-            int statusCode = connection.getResponseCode();
-            log.debug("[MorningGreetingLogic] HTTP 响应码: {}", statusCode);
-
-            if (statusCode >= 300 && statusCode < 400) {
-                String location = connection.getHeaderField("Location");
-                if (location != null && !location.isEmpty()) {
-                    log.info("[MorningGreetingLogic] 获取到重定向 URL: {}", location);
-                    return location;
-                }
-            } else if (statusCode == 200) {
-                // 如果直接返回 200，则原 URL 就是图片 URL
-                return shortUrl;
-            }
-
-            throw new Exception("重定向失败，HTTP 状态码: " + statusCode);
-
-        } catch (Exception e) {
-            log.error("[MorningGreetingLogic] 获取重定向 URL 异常", e);
-            throw e;
-        }
-    }
-
-    /**
-     * 下载图片内容为字节数组
-     * 
-     * @param imageUrl 图片 URL
-     * @return 图片字节数组
-     */
-    private byte[] downloadImage(String imageUrl) throws Exception {
-        try {
-            URL url = new URL(imageUrl);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("GET");
-            connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
-            connection.setConnectTimeout(5000);
-            connection.setReadTimeout(5000);
-
-            int statusCode = connection.getResponseCode();
-            if (statusCode != 200) {
-                throw new Exception("图片下载失败，HTTP 状态码: " + statusCode);
-            }
-
-            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-            try (BufferedInputStream bis = new BufferedInputStream(connection.getInputStream())) {
-                byte[] data = new byte[1024];
-                int nRead;
-                while ((nRead = bis.read(data, 0, data.length)) != -1) {
-                    buffer.write(data, 0, nRead);
-                }
-            }
-
-            return buffer.toByteArray();
-
-        } catch (Exception e) {
-            log.error("[MorningGreetingLogic] 下载图片异常", e);
-            throw e;
-        }
-    }
-
-    /**
-     * 发送图片到指定群组
-     * 调用本地 API 接口 POST /api/ncat/send/group-image
+     * 获取随机图片、转码并发送到指定群组
+     * 1. 使用 AlcyWebpGet 获取图片并保存为每个群组独立的文件
+     * 2. 使用 ImgToUri 转码为 Data URI
+     * 3. 通过 /api/ncat/send/group-image 接口发送到群组
      * 
      * @param groupId 群组ID
-     * @param dataUri 图片 Data URI（Base64 编码）
      */
-    private void sendImageToGroup(String groupId, String dataUri) {
+    private void sendImageToGroup(String groupId) throws Exception {
         try {
+            log.info("[MorningGreetingLogic] 开始获取并发送图片到群组: {}", groupId);
+
+            // 1. 为每个群组生成独立的图片文件名（确保每个群的图片都不同）
+            String imagePath = "img/早安图片.webp";
+            
+            log.debug("[MorningGreetingLogic] 获取图片到: {}", imagePath);
+            AlcyWebpGet.getAndSaveImage("http://t.alcy.cc/moez/", imagePath);
+
+            // 2. 将图片转码为 Data URI
+            String dataUri = ImgToUri.convertImageToDataUri(imagePath);
+            if (dataUri == null || dataUri.isEmpty()) {
+                throw new Exception("图片转码失败");
+            }
+
+            log.debug("[MorningGreetingLogic] 图片转码成功，Data URI 长度: {}", dataUri.length());
+
+            // 3. 通过接口发送图片到群组
             SendGroupImageRequest request = new SendGroupImageRequest();
             request.setGroupId(Long.parseLong(groupId));
             request.setFile(dataUri);
 
-            // 调用本地接口发送图片
             String url = "http://localhost:8090/api/ncat/send/group-image";
             Object response = restTemplate.postForObject(url, request, Object.class);
 
@@ -308,7 +196,7 @@ public class MorningGreetingLogic {
 
         } catch (Exception e) {
             log.error("[MorningGreetingLogic] 发送图片到群组 {} 失败", groupId, e);
-            throw new RuntimeException(e);
+            throw e;
         }
     }
 }

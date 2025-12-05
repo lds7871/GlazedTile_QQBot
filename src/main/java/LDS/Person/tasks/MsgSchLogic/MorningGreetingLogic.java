@@ -38,7 +38,7 @@ public class MorningGreetingLogic {
      */
     public void executeMorningGreeting() {
         try {
-            log.info("[MorningGreetingLogic] 开始发送每日早安问候");
+            //log.info("[MorningGreetingLogic] 开始发送每日早安问候");
 
             // 1. 查询需要发送早安问候的群组（greeting=1）
             List<String> groupIds = queryGroupIdsWithMorningGreeting();
@@ -56,7 +56,7 @@ public class MorningGreetingLogic {
                 return;
             }
 
-            log.info("[MorningGreetingLogic] 获取早安问候文本，长度: {}", morningText.length());
+            //log.info("[MorningGreetingLogic] 获取早安问候文本，长度: {}", morningText.length());
 
             // 3. 依次向每个群组发送问候，间隔 1~3 秒
             for (int i = 0; i < groupIds.size(); i++) {
@@ -64,12 +64,12 @@ public class MorningGreetingLogic {
                 try {
                     // 先发送文本消息
                     sendMessageToGroup(groupId, morningText);
-                    log.info("[MorningGreetingLogic] 早安问候文本已发送到群组: {}", groupId);
+                    //log.info("[MorningGreetingLogic] 早安问候文本已发送到群组: {}", groupId);
 
                     // 再获取图片、转码、发送图片消息
                     try {
                         sendImageToGroup(groupId);
-                        log.info("[MorningGreetingLogic] 早安问候图片已发送到群组: {}", groupId);
+                        //log.info("[MorningGreetingLogic] 早安问候图片已发送到群组: {}", groupId);
                     } catch (Exception e) {
                         log.warn("[MorningGreetingLogic] 图片发送到群组 {} 失败，但继续执行", groupId, e);
                     }
@@ -101,7 +101,7 @@ public class MorningGreetingLogic {
         try {
             String sql = "SELECT group_id FROM group_task WHERE greeting = 1";
             List<String> groupIds = jdbcTemplate.queryForList(sql, String.class);
-            log.info("[MorningGreetingLogic] 查询到 {} 个群组", groupIds.size());
+            //log.info("[MorningGreetingLogic] 查询到 {} 个群组", groupIds.size());
             return groupIds;
         } catch (Exception e) {
             log.error("[MorningGreetingLogic] 查询群组列表异常", e);
@@ -151,7 +151,7 @@ public class MorningGreetingLogic {
             String url = "http://localhost:8090/api/ncat/send/group-message";
             Object response = restTemplate.postForObject(url, request, Object.class);
 
-            log.debug("[MorningGreetingLogic] 发送消息到群组 {} 的响应: {}", groupId, response);
+            //log.debug("[MorningGreetingLogic] 发送消息到群组 {} 的响应: {}", groupId, response);
 
         } catch (Exception e) {
             log.error("[MorningGreetingLogic] 发送消息到群组 {} 失败", groupId, e);
@@ -168,12 +168,12 @@ public class MorningGreetingLogic {
      */
     private void sendImageToGroup(String groupId) throws Exception {
         try {
-            log.info("[MorningGreetingLogic] 开始获取并发送图片到群组: {}", groupId);
+            //log.info("[MorningGreetingLogic] 开始获取并发送图片到群组: {}", groupId);
 
             // 1. 为每个群组生成独立的图片文件名（确保每个群的图片都不同）
             String imagePath = "img/早安图片.webp";
             
-            log.debug("[MorningGreetingLogic] 获取图片到: {}", imagePath);
+            //log.debug("[MorningGreetingLogic] 获取图片到: {}", imagePath);
             AlcyWebpGet.getAndSaveImage("http://t.alcy.cc/moez/", imagePath);
 
             // 2. 将图片转码为 Data URI
@@ -182,7 +182,7 @@ public class MorningGreetingLogic {
                 throw new Exception("图片转码失败");
             }
 
-            log.debug("[MorningGreetingLogic] 图片转码成功，Data URI 长度: {}", dataUri.length());
+            //log.debug("[MorningGreetingLogic] 图片转码成功，Data URI 长度: {}", dataUri.length());
 
             // 3. 通过接口发送图片到群组
             SendGroupImageRequest request = new SendGroupImageRequest();
@@ -192,7 +192,7 @@ public class MorningGreetingLogic {
             String url = "http://localhost:8090/api/ncat/send/group-image";
             Object response = restTemplate.postForObject(url, request, Object.class);
 
-            log.debug("[MorningGreetingLogic] 发送图片到群组 {} 的响应: {}", groupId, response);
+            //log.debug("[MorningGreetingLogic] 发送图片到群组 {} 的响应: {}", groupId, response);
 
         } catch (Exception e) {
             log.error("[MorningGreetingLogic] 发送图片到群组 {} 失败", groupId, e);

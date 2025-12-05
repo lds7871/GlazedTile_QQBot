@@ -35,7 +35,7 @@ public class EveningGreetingLogic {
      */
     public void executeEveningGreeting() {
         try {
-            log.info("[EveningGreetingLogic] 开始发送每日晚安问候");
+            //log.info("[EveningGreetingLogic] 开始发送每日晚安问候");
 
             // 1. 查询需要发送晚安问候的群组（greeting=1）
             List<String> groupIds = queryGroupIdsWithMorningGreeting();
@@ -53,14 +53,14 @@ public class EveningGreetingLogic {
                 return;
             }
 
-            log.info("[EveningGreetingLogic] 获取晚安问候文本，长度: {}", eveningText.length());
+            //log.info("[EveningGreetingLogic] 获取晚安问候文本，长度: {}", eveningText.length());
 
             // 3. 依次向每个群组发送问候，间隔 1~3 秒
             for (int i = 0; i < groupIds.size(); i++) {
                 String groupId = groupIds.get(i);
                 try {
                     sendMessageToGroup(groupId, eveningText);
-                    log.info("[EveningGreetingLogic] 晚安问候已发送到群组: {}", groupId);
+                    //log.info("[EveningGreetingLogic] 晚安问候已发送到群组: {}", groupId);
 
                     // 如果不是最后一个群组，则随机等待 1~3 秒
                     if (i < groupIds.size() - 1) {
@@ -89,7 +89,7 @@ public class EveningGreetingLogic {
         try {
             String sql = "SELECT group_id FROM group_task WHERE greeting = 1";
             List<String> groupIds = jdbcTemplate.queryForList(sql, String.class);
-            log.info("[EveningGreetingLogic] 查询到 {} 个群组", groupIds.size());
+            //log.info("[EveningGreetingLogic] 查询到 {} 个群组", groupIds.size());
             return groupIds;
         } catch (Exception e) {
             log.error("[EveningGreetingLogic] 查询群组列表异常", e);
@@ -139,7 +139,7 @@ public class EveningGreetingLogic {
             String url = "http://localhost:8090/api/ncat/send/group-message";
             Object response = restTemplate.postForObject(url, request, Object.class);
 
-            log.debug("[EveningGreetingLogic] 发送消息到群组 {} 的响应: {}", groupId, response);
+           // log.debug("[EveningGreetingLogic] 发送消息到群组 {} 的响应: {}", groupId, response);
 
         } catch (Exception e) {
             log.error("[EveningGreetingLogic] 发送消息到群组 {} 失败", groupId, e);

@@ -11,15 +11,13 @@ proxy.port=33210
 proxy.port.socks=33211
 
 #========== QQBot配置 ==========
-# 是否启用 NapCat（true/false）
+# 是否启用 NapCat（true/false）我的天我为什么要写个这玩意
 NapCatIsOpen=true
 
-# NapCat API 基础 URL
-# 本地：http://localhost:3000
-# 远程：http://YOUR_SERVER_IP:3000
+# NapCat HTTP API 基础 URL（强烈建议本地服务）
 NapCatApiBase=http://0.0.0.0:3000
 
-# NapCat 认证令牌（从 NapCat 配置中获取）
+# NapCat HTTP 认证令牌（从 NapCat 配置中获取）
 NapCatAuthToken=YOUR_NAPCAT_AUTH_TOKEN
 
 # QQ 机器人 ID（Napcat 运行的 QQ 号）
@@ -29,11 +27,11 @@ NapcatQQID=YOUR_QQ_BOT_ID
 # 本地 Spring 应用的 WebSocket 端点
 WS_URL_LOCAL=ws://localhost:7090/onebot
 
-# 远程 NapCat 服务器的 WebSocket 端点
+#  NapCat 服务器的 WebSocket 端点 本地端点就填写Websocket服务器配置上的URL
 WS_URL_REMOTE=ws://YOUR_SERVER_IP:3001
 
-# 选择要连接的服务器（LOCAL 或 REMOTE）
+# 选择要连接的服务器（LOCAL 或 REMOTE 建议Local）
 WS_URL_SELECT=LOCAL
 
-# WebSocket 认证令牌
+# WebSocket 认证令牌(其实没有使用，我的WS没有token)
 WS_TOKEN=YOUR_WEBSOCKET_TOKEN

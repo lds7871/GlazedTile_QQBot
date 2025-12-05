@@ -14,9 +14,8 @@
 ## 提醒
 
 - 具体配置与说明文档请参考：
-  - QQBot说明文档.html(项目内)
-  - [QQBot说明文档网页](占位URL)
-  - [API详细介绍](占位URL)
+  - [GlazedTile_QQBot文档](https://zh-company.top/QQBot_Docs)
+  - [API详细介绍](https://g3f3r22hzj.apifox.cn)
 - 请先在主机配置：
   - NapCatQQ
   - 用户环境变量配置DEEPSEEK_API_KEY

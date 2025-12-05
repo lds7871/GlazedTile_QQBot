@@ -2,24 +2,26 @@
 
 ## 概述
 
-`GlazedTile_QQBot` 是一个基于 Spring Boot 的 QQ 机器人项目，整合了 NapCat/OneBot 协议，提供消息收发、群组任务、WebSocket 通信和定时任务自动化。
+`GlazedTile_QQBot` 是一个基于 Spring Boot 的 QQ 机器人项目，通过使用OneBot协议依靠NapCat框架来对Napcat本地HTTP接口二次封装和WS消息接受并格式化，提供消息收发、群组任务、WebSocket 通信和定时任务自动化。
 
 ## 特性
 
-- NapCat/OneBot WebSocket 通信
-- QQ 群组定时任务（定时保存数据库，定时发送消息，固定时段随机发送消息）
+- NapCat/OneBot WebSocket 通信,API 二次封装
+- QQ 群组定时任务（定时保存数据库，定时执行任务，固定时段随机执行任务）
 - QQ 群组监听任务（关键词、AT、用户指令、白名单指令）
 - 代理支持、日志等级控制、数据源配置灵活
 
 ## 提醒
 
 - 具体配置与说明文档请参考：
-- QQBot说明文档.html(项目内)
-- [QQBot说明文档网页端](占位URL)
-- [API详细介绍](占位URL)
+  - QQBot说明文档.html(项目内)
+  - [QQBot说明文档网页](占位URL)
+  - [API详细介绍](占位URL)
+- 请先在主机配置：
+  - NapCatQQ
+  - 用户环境变量配置DEEPSEEK_API_KEY
+  - 解你的VPN代理端口号(具体参考“QQBot说明文档”)
 - 项目可在Windows Server良好运行，其他系统不敢保证
-- 请先在主机配置NapCatQQ/用户环境变量配置DEEPSEEK_API_KEY/解你的VPN代理端口号(具体参考“QQBot说明文档”)
-
 
 ## 感谢项目中使用到的网站/应用/架构
 
@@ -60,7 +62,7 @@ src/main/java/LDS/Person/
 - MySQL Connector/J 8.0.33
 - Fastjson2、Jsoup、Gson 等常用工具库
 
-## 数据库准备
+## 1.数据库准备
 
 1. 创建数据库（示例使用 `XXXX`,详见src/.../resource文件夹）：
    ```sql
@@ -73,7 +75,7 @@ src/main/java/LDS/Person/
    - `group_task`：群任务配置
    - `daliy_greeting`：每日问候信息
 
-## 配置文件
+## 2.配置文件
 
 项目使用两个配置(详见src/.../resource文件夹)：
 
@@ -83,24 +85,24 @@ src/main/java/LDS/Person/
 | `config.properties` | NapCat/OneBot 相关配置（代理、认证、WebSocket 地址等）。请复制 `config.properties.example` 并填入 NapCat 令牌与 QQ ID。 |
 
 两个 `.example` 文件提供模版与注释，适合直接复制后修改。
+设置配置文件：
+```bash
+cp src/main/resources/application.yml.example src/main/resources/application.yml
+cp src/main/resources/config.properties.example src/main/resources/config.properties
+```
+修改配置中的数据库连接、NapCat 令牌、WebSocket 地址等。
 
-## 启动与运行
+## 3.执行启动项目：
 
-1. 设置配置文件：
-   ```bash
-   cp src/main/resources/application.yml.example src/main/resources/application.yml
-   cp src/main/resources/config.properties.example src/main/resources/config.properties
-   ```
-2. 修改配置中的数据库连接、NapCat 令牌、WebSocket 地址等。
-3. 执行启动项目：
-   ```bash
-   根目录内：A编译/A启动/B更新依赖/B同步项目
-   ```
-4. 访问 `http://localhost:8090` 验证应用状态。
+- Windows系统建议顺序：
+  - B更新依赖
+  - A编译
+  - A启动
+访问 `http://localhost:8090` 验证应用状态。
 
 ## 任务开关
 
-`task_open` 表控制运行的周期任务，包含：
+`task_open` 表控制运行的周期任务(数据库建表默认全部开启)，包含：
 
 | param_name | 描述 |
 |------------|------|
@@ -119,7 +121,7 @@ src/main/java/LDS/Person/
 
 - WebSocket 客户端位于 `websocket/OneBotWebSocketClient.java`，连接 NapCat 提供的 WebSocket API。
 - `config.properties` 中 `WS_URL_LOCAL` 与 `WS_URL_REMOTE` 控制连接哪个 NapCat 实例，`WS_URL_SELECT` 设定使用本地还是远程。
-- 认证令牌 `WS_TOKEN` 需要与 NapCat 配置一致。
+- 认证令牌 `WS_TOKEN` 需要与 NapCat 配置一致（但因为我WS没有配置Token，逻辑代码并没有使用此字段，详见说明文档）。
 
 ## 日志与调试
 

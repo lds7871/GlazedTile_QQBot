@@ -307,7 +307,8 @@ public class NCatSendMessageController {
             // 构建请求体
             JSONObject requestBody = buildSendGroupImageRequest(request.getGroupId(), request.getFile());
 
-            log.debug("请求体: {}", requestBody.toJSONString().length() > 50 ? requestBody.toJSONString().substring(0, 50) : requestBody.toJSONString());
+            log.debug("请求体: {}", requestBody.toJSONString().length() > 50 ? requestBody.toJSONString().substring(0, 50)
+                    : requestBody.toJSONString());
 
             // 调用 NapCat API
             String url = NCAT_API_BASE + "/send_group_msg";
@@ -377,6 +378,109 @@ public class NCatSendMessageController {
         imageItem.put("data", dataObj);
 
         messageArray.add(imageItem);
+        request.put("message", messageArray);
+
+        return request;
+    }
+
+    /**
+     * 发送群聊语音消息
+     */
+    @PostMapping("/group-sound")
+    @ApiOperation(value = "发送群聊语音消息", notes = "向指定群组发送语音消息")
+    public ResponseEntity<SendGroupMessageResponse> sendGroupSound(
+            @RequestBody SendGroupImageRequest request) {
+        try {
+            // 参数校验
+            if (request.getGroupId() == null || request.getGroupId() <= 0) {
+                log.warn("群组 ID 无效: {}", request.getGroupId());
+                return ResponseEntity.badRequest()
+                        .body(SendGroupMessageResponse.error("群组 ID 无效"));
+            }
+
+            if (request.getFile() == null || request.getFile().trim().isEmpty()) {
+                log.warn("语音文件路径为空");
+                return ResponseEntity.badRequest()
+                        .body(SendGroupMessageResponse.error("语音文件路径不能为空"));
+            }
+
+            // log.info("准备发送群聊语音消息，群组ID: {}", request.getGroupId());
+
+            // 构建请求体
+            JSONObject requestBody = buildSendGroupSoundRequest(request.getGroupId(), request.getFile());
+
+            // log.debug("请求体: {}", requestBody.toJSONString().length() > 50 ?
+            // requestBody.toJSONString().substring(0, 50)
+            // : requestBody.toJSONString());
+
+            // 调用 NapCat API
+            String url = NCAT_API_BASE + "/send_group_msg";
+            log.debug("调用 NapCat API: {}", url);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Authorization", "Bearer " + NCAT_AUTH_TOKEN);
+            headers.set("Content-Type", "application/json");
+
+            HttpEntity<String> entity = new HttpEntity<>(requestBody.toJSONString(), headers);
+            ResponseEntity<String> apiResponse = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
+
+            if (apiResponse.getStatusCode() != HttpStatus.OK) {
+                log.error("NapCat API 返回错误状态: {}", apiResponse.getStatusCode());
+                return ResponseEntity.status(apiResponse.getStatusCode())
+                        .body(SendGroupMessageResponse.error("API 请求失败，状态码: " + apiResponse.getStatusCode()));
+            }
+
+            // 解析响应
+            JSONObject jsonResponse = JSON.parseObject(apiResponse.getBody());
+            // log.debug("API 响应: {}", jsonResponse.toJSONString());
+
+            // 检查是否成功
+            if (jsonResponse.containsKey("status") && !jsonResponse.getString("status").equals("ok")) {
+                String errorMsg = jsonResponse.getString("message");
+                log.error("NapCat API 返回错误: {}", errorMsg);
+                SendGroupMessageResponse response = SendGroupMessageResponse.error(errorMsg);
+                response.setRawResponse(jsonResponse);
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // 提取消息 ID
+            Integer messageId = null;
+            if (jsonResponse.containsKey("data")) {
+                JSONObject data = jsonResponse.getJSONObject("data");
+                messageId = data.getInteger("message_id");
+            }
+
+            // log.info("✅ 群聊语音消息发送成功，消息ID: {}", messageId);
+
+            SendGroupMessageResponse response = SendGroupMessageResponse.success(messageId);
+            response.setRawResponse(jsonResponse);
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("发送群聊语音消息异常", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(SendGroupMessageResponse.error("服务器错误: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * 构建发送群聊语音请求体
+     */
+    private JSONObject buildSendGroupSoundRequest(Long groupId, String soundFile) {
+        JSONObject request = new JSONObject();
+        request.put("group_id", groupId);
+
+        // 构建消息数组
+        JSONArray messageArray = new JSONArray();
+        JSONObject soundItem = new JSONObject();
+        soundItem.put("type", "record");
+
+        JSONObject dataObj = new JSONObject();
+        dataObj.put("file", soundFile);
+        soundItem.put("data", dataObj);
+
+        messageArray.add(soundItem);
         request.put("message", messageArray);
 
         return request;

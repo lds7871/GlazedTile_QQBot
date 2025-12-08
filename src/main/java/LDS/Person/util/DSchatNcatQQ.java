@@ -205,10 +205,11 @@ public class DSchatNcatQQ {
     }
 
     /**
-     * 使用 DeepSeek API 进行对话，保持用户上下文
+     * 使用 DeepSeek API 进行多轮对话，保持用户上下文
      * 
      * @param 输入文本   用户输入的消息内容
      * @param userId 用户唯一标识（用来维护独立的对话历史）
+     * @return AI 的回复内容
      */
     public String Usedeepseek(String 输入文本, String userId) throws Exception {
         String key = System.getenv("DEEPSEEK_API_KEY");
@@ -220,25 +221,36 @@ public class DSchatNcatQQ {
         // 添加用户消息到历史
         addMessageToHistory(userId, "user", 输入文本);
 
-        // 构建消息数组：System 角色 + 只使用最新的一条消息
+        // 构建消息数组（多轮对话格式）
         ArrayNode messages = mapper.createArrayNode();
+        
+        // 添加 System 角色（可选）
         ObjectNode sys = mapper.createObjectNode();
         sys.put("role", "system");
-        sys.put("content", "你的设定是胆小但又贴心的学妹兼助手。名字是\"科罗娜\"。接收消息格式是\"用户昵称：内容\"。回复时只输出对话内容，不要添加\"用户\"、昵称或任何前缀。");//
+        sys.put("content", " ");//你的设定是胆小但又贴心的学妹兼助手。名字是\"科罗娜\"。接收消息格式是\"用户昵称：内容\"。回复时只输出对话内容，不要添加\"用户\"、昵称或任何前缀。
         messages.add(sys);
 
-        // 只添加最新的用户消息（不包含历史记录）
+        // 添加该用户的完整对话历史（包括之前的所有对话）
         ArrayNode history = getHistory(userId);
-        if (history.size() > 0) {
-            messages.add(history.get(history.size() - 1));
+        for (int i = 0; i < history.size(); i++) {
+            messages.add(history.get(i));
         }
+
+        // 在控制台输出传入的消息 JSON
+        System.out.println("[DeepSeek 多轮对话] 用户ID: " + userId);
+        System.out.println("[DeepSeek 多轮对话] 发送的消息 JSON:");
+        System.out.println(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(messages));
 
         // 调用 DeepSeek API
         DSchatNcatQQ client = new DSchatNcatQQ(key);
-        String resp = client.createChatCompletion("deepseek-reasoner", messages);
+        String resp = client.createChatCompletion("deepseek-chat", messages);
 
         // 添加 AI 回复到历史
         addMessageToHistory(userId, "assistant", resp);
+
+        System.out.println("[DeepSeek 多轮对话] AI 回复: " + resp);
+        System.out.println("[DeepSeek 多轮对话] 当前用户消息历史条数: " + history.size());
+        System.out.println("---");
 
         return resp;
     }

@@ -107,7 +107,7 @@ public class RandomChatLogic {
             }
             log.info("触发随机对话群ID: {}", groupId);
             // 调用 DeepSeek 生成对话
-            String prompt = "生成一句无关紧要但又有点无语的对话，不要带引号";
+            String prompt = "生成一句无关紧要随意聊天的二次元对话，不要带引号";
             String randomMessage = callDeepSeekAPI(prompt);
             
             if (randomMessage == null || randomMessage.isEmpty()) {

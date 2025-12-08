@@ -205,10 +205,10 @@ public class DSchatNcatQQ {
     }
 
     /**
-     * 使用 DeepSeek API 进行多轮对话，保持用户上下文
+     * 使用 DeepSeek API 进行多轮对话，使用共享上下文
      * 
      * @param 输入文本   用户输入的消息内容
-     * @param userId 用户唯一标识（用来维护独立的对话历史）
+     * @param userId 用户唯一标识（此参数保留但不用于区分上下文）
      * @return AI 的回复内容
      */
     public String Usedeepseek(String 输入文本, String userId) throws Exception {
@@ -218,8 +218,11 @@ public class DSchatNcatQQ {
             return "请先在环境变量中设置 DEEPSEEK_API_KEY";
         }
 
-        // 添加用户消息到历史
-        addMessageToHistory(userId, "user", 输入文本);
+        // 使用固定的 key 作为共享上下文标识
+        String sharedContextKey = "shared_context";
+
+        // 添加用户消息到共享历史
+        addMessageToHistory(sharedContextKey, "user", 输入文本);
 
         // 构建消息数组（多轮对话格式）
         ArrayNode messages = mapper.createArrayNode();
@@ -230,8 +233,8 @@ public class DSchatNcatQQ {
         sys.put("content", " ");//你的设定是胆小但又贴心的学妹兼助手。名字是\"科罗娜\"。接收消息格式是\"用户昵称：内容\"。回复时只输出对话内容，不要添加\"用户\"、昵称或任何前缀。
         messages.add(sys);
 
-        // 添加该用户的完整对话历史（包括之前的所有对话）
-        ArrayNode history = getHistory(userId);
+        // 添加共享的完整对话历史（包括之前的所有对话）
+        ArrayNode history = getHistory(sharedContextKey);
         for (int i = 0; i < history.size(); i++) {
             messages.add(history.get(i));
         }
@@ -245,11 +248,11 @@ public class DSchatNcatQQ {
         DSchatNcatQQ client = new DSchatNcatQQ(key);
         String resp = client.createChatCompletion("deepseek-chat", messages);
 
-        // 添加 AI 回复到历史
-        addMessageToHistory(userId, "assistant", resp);
+        // 添加 AI 回复到共享历史
+        addMessageToHistory(sharedContextKey, "assistant", resp);
 
         System.out.println("[DeepSeek 多轮对话] AI 回复: " + resp);
-        System.out.println("[DeepSeek 多轮对话] 当前用户消息历史条数: " + history.size());
+        System.out.println("[DeepSeek 多轮对话] 当前消息历史条数: " + history.size());
         System.out.println("---");
 
         return resp;

@@ -1,0 +1,275 @@
+package org.example.network;
+
+import org.example.ai.DeepSeekClient;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+/*
+ * 使用 GitHub API 和AI对过去一周总结
+ */
+
+public class GitHubMain {
+    public static void main(String[] args) throws Exception {
+        String username = "lds7871";
+        String token = System.getenv("GITHUB_TOKEN");
+        
+        if (token == null || token.isEmpty()) {
+            System.err.println("请先设置环境变量 GITHUB_TOKEN");
+            return;
+        }
+
+        DeepSeekClient deepSeekClient=new DeepSeekClient(token);
+
+        String result = getAllRepoCommits(username, token);
+        System.out.println(result);
+        // String airesult=deepSeekClient.Usedeepseek(result);
+        // System.out.println(airesult);
+    }
+    
+    public static String getAllRepoCommits(String username, String token) throws Exception {
+        long startTime = System.currentTimeMillis();
+        StringBuilder output = new StringBuilder();
+        ObjectMapper mapper = new ObjectMapper();
+
+        // 获取用户信息（用于获取 public_repos）
+        String userApiUrl = "https://api.github.com/users/" + username;
+        URL userUrl = new URL(userApiUrl);
+        HttpURLConnection userConn = (HttpURLConnection) userUrl.openConnection();
+        userConn.setRequestMethod("GET");
+        userConn.setRequestProperty("Accept", "application/vnd.github.v3+json");
+        userConn.setRequestProperty("Authorization", "token " + token);
+
+        if (userConn.getResponseCode() != 200) {
+            throw new RuntimeException("请求用户信息失败，HTTP错误码：" + userConn.getResponseCode());
+        }
+
+        BufferedReader userBr = new BufferedReader(new InputStreamReader(userConn.getInputStream(), StandardCharsets.UTF_8));
+        StringBuilder userJsonBuilder = new StringBuilder();
+        String userOutput;
+        while ((userOutput = userBr.readLine()) != null) {
+            userJsonBuilder.append(userOutput);
+        }
+        userConn.disconnect();
+
+        JsonNode userRoot = mapper.readTree(userJsonBuilder.toString());
+    int publicRepoCount = userRoot.path("public_repos").asInt(0);
+    // output.append("总公开仓库数量: ").append(publicRepoCount).append("\n\n");
+
+        // 检测 token 对应的 authenticated 用户（如果 token 有效）
+        String authLogin = null;
+        try {
+            URL authUserUrl = new URL("https://api.github.com/user");
+            HttpURLConnection authConn = (HttpURLConnection) authUserUrl.openConnection();
+            authConn.setRequestMethod("GET");
+            authConn.setRequestProperty("Accept", "application/vnd.github.v3+json");
+            authConn.setRequestProperty("Authorization", "token " + token);
+            if (authConn.getResponseCode() == 200) {
+                BufferedReader authBr = new BufferedReader(new InputStreamReader(authConn.getInputStream(), StandardCharsets.UTF_8));
+                StringBuilder authJson = new StringBuilder();
+                String line;
+                while ((line = authBr.readLine()) != null) authJson.append(line);
+                JsonNode authRoot = mapper.readTree(authJson.toString());
+                authLogin = authRoot.path("login").asText(null);
+            }
+            authConn.disconnect();
+        } catch (Exception ignored) {
+            // ignore, we'll fall back to public listing
+        }
+
+        // 获取所有仓库（分页），并分别收集公开仓库与私有仓库
+        List<String> publicRepos = new ArrayList<>();
+        List<String> privateRepos = new ArrayList<>();
+        int page = 1;
+        while (true) {
+            String reposApiUrl;
+            // 如果 token 的拥有者正是查询的 username，则使用 /user/repos 来包含 private 仓库（需要 token 拥有 repo 权限）
+            if (authLogin != null && authLogin.equalsIgnoreCase(username)) {
+                reposApiUrl = "https://api.github.com/user/repos?affiliation=owner&page=" + page + "&per_page=100";
+            } else {
+                reposApiUrl = "https://api.github.com/users/" + username + "/repos?page=" + page + "&per_page=100";
+            }
+            URL reposUrl = new URL(reposApiUrl);
+            HttpURLConnection reposConn = (HttpURLConnection) reposUrl.openConnection();
+            reposConn.setRequestMethod("GET");
+            reposConn.setRequestProperty("Accept", "application/vnd.github.v3+json");
+            reposConn.setRequestProperty("Authorization", "token " + token);
+
+            int reposResp = reposConn.getResponseCode();
+            if (reposResp != 200) {
+                reposConn.disconnect();
+                throw new RuntimeException("请求仓库失败，HTTP错误码：" + reposResp);
+            }
+
+            BufferedReader reposBr = new BufferedReader(new InputStreamReader(reposConn.getInputStream(), StandardCharsets.UTF_8));
+            StringBuilder reposJsonBuilder = new StringBuilder();
+            String reposOutput;
+            while ((reposOutput = reposBr.readLine()) != null) {
+                reposJsonBuilder.append(reposOutput);
+            }
+            reposConn.disconnect();
+
+            JsonNode reposRoot = mapper.readTree(reposJsonBuilder.toString());
+            if (reposRoot.size() == 0) break;
+            for (JsonNode repo : reposRoot) {
+                String rname = repo.path("name").asText();
+                boolean isPrivate = repo.path("private").asBoolean(false);
+                if (isPrivate) privateRepos.add(rname); else publicRepos.add(rname);
+            }
+            page++;
+            Thread.sleep(50);
+        }
+
+        // 仅查询最近7天的提交；对每个仓库，分页获取以该用户为作者的提交记录
+        long oneWeekAgo = System.currentTimeMillis() - (7L * 24 * 60 * 60 * 1000);
+        output.append("仅显示最近7天内的提交\n\n");
+    // 先处理并输出公开仓库，再处理私有仓库（如果有权限）
+    // 处理公开仓库
+    for (String repoName : publicRepos) {
+            int commitPage = 1;
+            int commitsFound = 0;
+            boolean stopRepoPaging = false;
+            StringBuilder repoOutput = new StringBuilder();
+            while (true) {
+                String commitsApi = String.format("https://api.github.com/repos/%s/%s/commits?author=%s&per_page=100&page=%d",
+                        username, repoName, username, commitPage);
+                URL commitsUrl = new URL(commitsApi);
+                HttpURLConnection commitsConn = (HttpURLConnection) commitsUrl.openConnection();
+                commitsConn.setRequestMethod("GET");
+                commitsConn.setRequestProperty("Accept", "application/vnd.github.v3+json");
+                commitsConn.setRequestProperty("Authorization", "token " + token);
+
+                int commitsResp = commitsConn.getResponseCode();
+                if (commitsResp == 200) {
+                    BufferedReader commitsBr = new BufferedReader(new InputStreamReader(commitsConn.getInputStream(), StandardCharsets.UTF_8));
+                    StringBuilder commitsJsonBuilder = new StringBuilder();
+                    String commitsOutput;
+                    while ((commitsOutput = commitsBr.readLine()) != null) {
+                        commitsJsonBuilder.append(commitsOutput);
+                    }
+                    commitsConn.disconnect();
+
+                    JsonNode commitsRoot = mapper.readTree(commitsJsonBuilder.toString());
+                    if (commitsRoot.size() == 0) break;
+
+                    for (JsonNode commitNode : commitsRoot) {
+                        String date = commitNode.path("commit").path("author").path("date").asText();
+                        long commitMillis = java.time.Instant.parse(date).toEpochMilli();
+                        // 如果提交早于一周前，停止对该仓库的后续分页请求
+                        if (commitMillis < oneWeekAgo) {
+                            stopRepoPaging = true;
+                            break;
+                        }
+                        String message = commitNode.path("commit").path("message").asText();
+                        repoOutput.append("  - ").append(date).append(" | ")
+                                  .append(message.replaceAll("\r?\n", " ")).append("\n");
+                        commitsFound++;
+                    }
+                    commitPage++;
+                    if (stopRepoPaging) {
+                        // 已遇到早于一周的提交，终止分页
+                        break;
+                    }
+                    Thread.sleep(50);
+                } else if (commitsResp == 404) {
+                    // 仓库不可访问或不存在
+                    repoOutput.append("  无法访问该仓库或仓库不存在（HTTP 404）\n");
+                    commitsConn.disconnect();
+                    break;
+                } else if (commitsResp == 403) {
+                    repoOutput.append("  访问受限（可能触发速率限制或权限不足）\n");
+                    commitsConn.disconnect();
+                    break;
+                } else {
+                    repoOutput.append("  获取提交失败，HTTP: ").append(commitsResp).append("\n");
+                    commitsConn.disconnect();
+                    break;
+                }
+            }
+            if (commitsFound > 0) {
+                output.append("仓库（公开）: ").append(repoName).append("\n");
+                output.append(repoOutput.toString());
+                output.append("\n");
+            }
+        }
+
+        // 处理私有仓库（如果 token 所属用户与目标相同且 privateRepos 非空）
+        if (!privateRepos.isEmpty()) {
+            for (String repoName : privateRepos) {
+                int commitPage = 1;
+                int commitsFound = 0;
+                boolean stopRepoPaging = false;
+                StringBuilder repoOutput = new StringBuilder();
+                while (true) {
+                    String commitsApi = String.format("https://api.github.com/repos/%s/%s/commits?author=%s&per_page=100&page=%d",
+                            username, repoName, username, commitPage);
+                    URL commitsUrl = new URL(commitsApi);
+                    HttpURLConnection commitsConn = (HttpURLConnection) commitsUrl.openConnection();
+                    commitsConn.setRequestMethod("GET");
+                    commitsConn.setRequestProperty("Accept", "application/vnd.github.v3+json");
+                    commitsConn.setRequestProperty("Authorization", "token " + token);
+
+                    int commitsResp = commitsConn.getResponseCode();
+                    if (commitsResp == 200) {
+                        BufferedReader commitsBr = new BufferedReader(new InputStreamReader(commitsConn.getInputStream(), StandardCharsets.UTF_8));
+                        StringBuilder commitsJsonBuilder = new StringBuilder();
+                        String commitsOutput;
+                        while ((commitsOutput = commitsBr.readLine()) != null) {
+                            commitsJsonBuilder.append(commitsOutput);
+                        }
+                        commitsConn.disconnect();
+
+                        JsonNode commitsRoot = mapper.readTree(commitsJsonBuilder.toString());
+                        if (commitsRoot.size() == 0) break;
+
+                        for (JsonNode commitNode : commitsRoot) {
+                            String date = commitNode.path("commit").path("author").path("date").asText();
+                            long commitMillis = java.time.Instant.parse(date).toEpochMilli();
+                            if (commitMillis < oneWeekAgo) {
+                                stopRepoPaging = true;
+                                break;
+                            }
+                            String message = commitNode.path("commit").path("message").asText();
+                            repoOutput.append("  - ").append(date).append(" | ")
+                                      .append(message.replaceAll("\r?\n", " ")).append("\n");
+                            commitsFound++;
+                        }
+                        commitPage++;
+                        if (stopRepoPaging) break;
+                        Thread.sleep(50);
+                    } else if (commitsResp == 404) {
+                        repoOutput.append("  无法访问该仓库或仓库不存在（HTTP 404）\n");
+                        commitsConn.disconnect();
+                        break;
+                    } else if (commitsResp == 403) {
+                        repoOutput.append("  访问受限（可能触发速率限制或权限不足）\n");
+                        commitsConn.disconnect();
+                        break;
+                    } else {
+                        repoOutput.append("  获取提交失败，HTTP: ").append(commitsResp).append("\n");
+                        commitsConn.disconnect();
+                        break;
+                    }
+                }
+                if (commitsFound > 0) {
+                    output.append("仓库（私有）: ").append(repoName).append("\n");
+                    output.append(repoOutput.toString());
+                    output.append("\n");
+                }
+            }
+        }
+
+        long endTime = System.currentTimeMillis();
+        double seconds = (endTime - startTime) / 1000.0;
+        output.append("总查询时长: ").append(String.format("%.2f", seconds)).append(" 秒\n");
+         
+
+        return output.toString();
+    }
+}

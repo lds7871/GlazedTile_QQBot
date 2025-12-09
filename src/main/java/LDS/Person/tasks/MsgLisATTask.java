@@ -34,6 +34,10 @@ public class MsgLisATTask {
     private static final String NCAT_API_BASE = configManager.getNapCatApiBase();
     private static final String NCAT_AUTH_TOKEN = configManager.getNapCatAuthToken();
     private static final String BOT_QQ_ID = configManager.getNapcatQQID();
+    
+    // 重试相关常量
+    private static final long RETRY_BASE_DELAY_MS = 1000L;          // 基础重试延迟（毫秒）
+    private static final long SERVER_ERROR_RETRY_DELAY_MS = 2000L;  // 服务器错误重试延迟（毫秒）
 
     /**
      * 处理接收到的 WebSocket 消息
@@ -191,7 +195,7 @@ public class MsgLisATTask {
 
                 // 重试前等待一段时间，使用指数退避策略
                 if (i < retryCount) {
-                    long waitTime = 1000L * i; // 等待时间递增：1秒、2秒
+                    long waitTime = RETRY_BASE_DELAY_MS * i; // 等待时间递增：1秒、2秒
                     log.info("等待 {} 毫秒后进行第 {} 次重试...", waitTime, i + 1);
                     try {
                         Thread.sleep(waitTime);
@@ -208,7 +212,7 @@ public class MsgLisATTask {
                 // 如果是 502/503/504 等服务器错误，进行重试，使用指数退避策略
                 if (i < retryCount && (e.getRawStatusCode() >= 500)) {
                     try {
-                        long waitTime = 2000L * i; // 等待时间：2秒、4秒
+                        long waitTime = SERVER_ERROR_RETRY_DELAY_MS * i; // 等待时间：2秒、4秒
                         log.info("服务器错误，等待 {} 毫秒后进行第 {} 次重试...", waitTime, i + 1);
                         Thread.sleep(waitTime);
                     } catch (InterruptedException ie) {

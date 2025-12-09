@@ -40,6 +40,9 @@ public class HttpClientFactory {
     
     /**
      * 获取自定义超时时间的HttpClient实例
+     * 注意：此方法会创建新的HttpClient实例，不使用缓存
+     * 建议仅在确实需要不同超时设置时使用，否则应使用getInstance()
+     * 
      * @param timeoutSeconds 超时时间（秒）
      * @return 配置好的HttpClient实例
      */

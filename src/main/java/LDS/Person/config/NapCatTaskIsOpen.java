@@ -45,6 +45,7 @@ public class NapCatTaskIsOpen {
     private volatile long lastLoadTime = 0;
     
     // 缓存有效期（毫秒），默认5分钟，减少数据库访问频率
+    // 可根据实际需求调整此值：更频繁的配置变更需要更短的缓存时间
     private static final long CACHE_VALIDITY_MS = 5 * 60 * 1000;
 
     @PostConstruct
@@ -70,18 +71,27 @@ public class NapCatTaskIsOpen {
     /**
      * 运行时刷新配置 - 重新从数据库读取任务状态
      * 添加缓存检查，避免频繁访问数据库
+     * 使用双重检查锁定确保线程安全
      */
     public void refreshTaskStates() {
-        // 检查缓存是否仍然有效
+        // 第一次检查（无锁，快速路径）
         long currentTime = System.currentTimeMillis();
         if (currentTime - lastLoadTime < CACHE_VALIDITY_MS) {
             log.debug("使用缓存的任务状态配置，缓存仍然有效");
             return;
         }
         
-        System.out.println("[NapCatTaskIsOpen] 开始刷新任务状态...");
+        // 获取写锁进行更新
         lock.writeLock().lock();
         try {
+            // 第二次检查（持有锁，防止重复加载）
+            currentTime = System.currentTimeMillis();
+            if (currentTime - lastLoadTime < CACHE_VALIDITY_MS) {
+                log.debug("其他线程已刷新配置，使用已更新的配置");
+                return;
+            }
+            
+            System.out.println("[NapCatTaskIsOpen] 开始刷新任务状态...");
             Map<String, Integer> taskStates = readTaskStatesFromDatabase();
             
             System.out.println("[NapCatTaskIsOpen] 从数据库读取到的原始数据: " + taskStates);

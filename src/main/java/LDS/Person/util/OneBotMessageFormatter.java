@@ -7,9 +7,12 @@ import java.time.format.DateTimeFormatter;
 /**
  * OneBot 消息简化工具
  * 将复杂的 WebSocket 消息简化为易读的字符串格式
+ * 
+ * 性能优化：使用StringBuilder进行字符串拼接，避免String连接的性能损耗
  */
 public class OneBotMessageFormatter {
 
+    // 使用静态常量避免重复创建DateTimeFormatter实例，提高性能
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     /**

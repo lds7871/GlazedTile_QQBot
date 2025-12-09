@@ -16,8 +16,9 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 /**
  * DeepSeek API Java 客户端模板（非流式 chat/completions）
  * 使用 Java 11+ HttpClient 和 Jackson
- * 支持本地上下文管理：每个用户最多保存5条消息
- *
+ * 支持本地上下文管理：每个用户最多保存15条消息
+ * 
+ * 性能优化：使用共享的HttpClient实例以提高性能和减少资源消耗
  * 环境变量：DEEPSEEK_API_KEY
  */
 
@@ -34,9 +35,8 @@ public class DSchatNcatQQ {
 
     public DSchatNcatQQ(String apiKey) {
         this.apiKey = apiKey;
-        this.client = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(20))
-                .build();
+        // 使用共享的HttpClient实例，避免每次创建新实例
+        this.client = HttpClientFactory.getInstance();
     }
 
     /**

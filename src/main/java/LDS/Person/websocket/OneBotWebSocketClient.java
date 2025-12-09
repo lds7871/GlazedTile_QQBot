@@ -1,8 +1,7 @@
 package LDS.Person.websocket;
 
-import java.io.InputStream;
+import LDS.Person.util.ConfigManager;
 import java.net.URI;
-import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -40,37 +39,16 @@ public class OneBotWebSocketClient {
    // 心跳间隔（毫秒）
    private static final int HEARTBEAT_INTERVAL = 2950; // 30秒
 
-   // 静态初始化块：从 config.properties 读取配置
+   // 使用ConfigManager获取配置，避免重复加载配置文件，提高性能
    static {
-       Properties props = new Properties();
-       String wsUrlLocal = "000";  // 默认值
-       String wsUrlRemote = "0000";   // 默认值
-       String token = "0000";                  // 默认值
-       String wsSelect = "0000";                          // 默认值
-
-       try (InputStream input = OneBotWebSocketClient.class.getClassLoader()
-               .getResourceAsStream("config.properties")) {
-           if (input != null) {
-               props.load(input);
-               wsUrlLocal = props.getProperty("WS_URL_LOCAL", wsUrlLocal);
-               wsUrlRemote = props.getProperty("WS_URL_REMOTE", wsUrlRemote);
-               token = props.getProperty("WS_TOKEN", token);
-               wsSelect = props.getProperty("WS_URL_SELECT", wsSelect);
-               System.out.println("[INFO] 已从 config.properties 加载 WebSocket 配置");
-           } else {
-               System.out.println("[WARN] config.properties 未找到，使用默认配置");
-           }
-       } catch (Exception e) {
-           System.err.println("[ERROR] 加载 config.properties 失败: " + e.getMessage());
-       }
+       ConfigManager configManager = ConfigManager.getInstance();
+       WS_URL_LOCAL = configManager.getWsUrlLocal();
+       WS_URL_REMOTE = configManager.getWsUrlRemote();
+       TOKEN = configManager.getWsToken();
+       String wsSelect = configManager.getWsUrlSelect();
 
        // 根据配置选择 URL
-       String selectedUrl = "LOCAL".equalsIgnoreCase(wsSelect) ? wsUrlLocal : wsUrlRemote;
-
-       WS_URL_LOCAL = wsUrlLocal;
-       WS_URL_REMOTE = wsUrlRemote;
-       WS_URL = selectedUrl;
-       TOKEN = token;
+       WS_URL = "LOCAL".equalsIgnoreCase(wsSelect) ? WS_URL_LOCAL : WS_URL_REMOTE;
 
        System.out.println("[INFO] WebSocket 配置已加载: WS_URL=" + WS_URL);
    }

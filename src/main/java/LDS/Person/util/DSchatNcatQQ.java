@@ -24,7 +24,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 public class DSchatNcatQQ {
     private static final String BASE_URL = "https://api.deepseek.com";//  https://api.deepseek.com/v3.2_speciale_expires_on_20251215
     private static final ObjectMapper mapper = new ObjectMapper();
-    private static final int MAX_HISTORY = 5; // 每个用户最多保存5条消息
+    private static final int MAX_HISTORY = 15; // 最多保存15条消息（节省token）
     private static final Map<String, ArrayNode> conversationHistory = new ConcurrentHashMap<>();
     // 用于存储用户昵称的映射：userId -> nickname
     private static final Map<String, String> userNicknameMap = new ConcurrentHashMap<>();

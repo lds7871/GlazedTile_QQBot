@@ -254,7 +254,7 @@ public class KeywordTriggerLogic {
       return baseUrl + "Memes/" + randomNum + ".png";
     }
 
-    // 默认返回 BIGHead
+    // 默认返回
     int randomNum = RANDOM.nextInt(746) + 1;
     return baseUrl + "Memes/" + randomNum + ".png";
   }

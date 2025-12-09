@@ -48,10 +48,10 @@ public class MsgSchHumanTask {
                 return;
             }
             
-            // 每小时内随机决定是否发送（概率为当前分钟数/60）
+            // 每小时内随机决定是否发送（概率为当前分钟数/60/2）
             // 这样保证每小时大约有一定概率触发
-            int currentMinute = currentTime.getMinute();
-            int randomValue = random.nextInt(60);
+            int currentMinute = currentTime.getMinute()/2;
+            int randomValue = random.nextInt(30);
             
             if (randomValue == currentMinute) {
                 System.out.println("[MsgSchTask] ！！！触发随机对话任务，当前时间: " + currentTime);

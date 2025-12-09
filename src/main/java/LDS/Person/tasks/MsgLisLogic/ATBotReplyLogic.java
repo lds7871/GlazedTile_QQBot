@@ -226,11 +226,11 @@ public class ATBotReplyLogic {
   }
 
   /**
-   * 判断是否应该发送图片（五分之一概率）
+   * 判断是否应该发送图片（10分之一概率）
    */
   private boolean shouldSendImage() {
     Random random = new Random();
-    return random.nextInt(5) == 0; // 20%的概率（1/5）
+    return random.nextInt(10) == 0; // 20%的概率（1/10）
   }
 
   /**

@@ -156,12 +156,12 @@ public class MsgLisATTask {
             // 调用 NapCat API 发送消息（带重试机制）
             boolean success = sendMessageWithRetry(groupId, requestBody, 2);
 
-            // 如果发送成功，有五分之一的概率发送固定图片
-            if (success) {
-                if (shouldSendImage()) {
-                    sendGroupFixedImage(groupId);
-                }
-            }
+            // // 如果发送成功，有五分之一的概率发送固定图片
+            // if (success) {
+            //     if (shouldSendImage()) {
+            //         sendGroupFixedImage(groupId);
+            //     }
+            // }
 
         } catch (Exception e) {
             log.error("发送自动回复异常 - 群ID: {}", groupId, e);
@@ -273,7 +273,7 @@ public class MsgLisATTask {
      */
     private boolean shouldSendImage() {
         Random random = new Random();
-        return random.nextInt(5) == 0; // 20%的概率（1/5）
+        return random.nextInt(10) == 0; // 20%的概率（1/5）
     }
 
     /**

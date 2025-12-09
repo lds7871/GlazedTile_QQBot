@@ -159,6 +159,6 @@ public class ConfigManager {
     }
     
     public int getProxyPort() {
-        return getInt("proxy.port", 8080);
+        return getInt("proxy.port", 33210);
     }
 }

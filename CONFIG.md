@@ -49,7 +49,7 @@ WS_URL_SELECT=LOCAL
 # 代理配置
 proxy.is.open=false
 proxy.host=127.0.0.1
-proxy.port=8080
+proxy.port=33210
 ```
 
 **使用示例**:

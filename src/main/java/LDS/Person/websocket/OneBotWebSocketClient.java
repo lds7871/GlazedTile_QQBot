@@ -1,6 +1,6 @@
 package LDS.Person.websocket;
 
-import LDS.Person.util.ConfigManager;
+import LDS.Person.config.ConfigManager;
 import java.net.URI;
 import java.util.Timer;
 import java.util.TimerTask;

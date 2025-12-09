@@ -1,4 +1,4 @@
-package LDS.Person.util;
+package LDS.Person.config;
 
 import java.io.InputStream;
 import java.util.Properties;

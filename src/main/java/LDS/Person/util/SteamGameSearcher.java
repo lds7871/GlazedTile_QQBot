@@ -1,6 +1,6 @@
 package LDS.Person.util;
 
-import LDS.Person.util.ConfigManager;
+import LDS.Person.config.ConfigManager;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;

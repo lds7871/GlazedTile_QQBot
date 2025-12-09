@@ -1,7 +1,7 @@
 package LDS.Person.tasks.MsgLisLogic;
 
 import com.alibaba.fastjson2.JSONObject;
-import LDS.Person.util.ConfigManager;
+import LDS.Person.config.ConfigManager;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;

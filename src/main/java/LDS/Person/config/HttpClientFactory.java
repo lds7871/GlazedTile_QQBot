@@ -1,4 +1,4 @@
-package LDS.Person.util;
+package LDS.Person.config;
 
 import java.net.http.HttpClient;
 import java.time.Duration;

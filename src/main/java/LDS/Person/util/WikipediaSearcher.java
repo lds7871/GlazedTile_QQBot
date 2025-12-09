@@ -1,11 +1,11 @@
 package LDS.Person.util;
 
+import LDS.Person.config.ConfigManager;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
@@ -14,49 +14,13 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Properties;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 
 public class WikipediaSearcher {
 
-    // 代理配置（从 config.properties 读取）
-    private static boolean PROXY_ENABLED = false;
-    private static String PROXY_HOST = "127.0.0.1";
-    private static int PROXY_PORT = 33210;
-    
-    /**
-     * 静态初始化块：从 config.properties 读取代理配置
-     */
-    static {
-        try (InputStream input = WikipediaSearcher.class.getClassLoader()
-                .getResourceAsStream("config.properties")) {
-            if (input != null) {
-                Properties props = new Properties();
-                props.load(input);
-                
-                // 读取代理配置
-                String proxyEnabled = props.getProperty("proxy.is.open", "false");
-                PROXY_ENABLED = Boolean.parseBoolean(proxyEnabled);
-                
-                PROXY_HOST = props.getProperty("proxy.host", "127.0.0.1");
-                
-                try {
-                    PROXY_PORT = Integer.parseInt(props.getProperty("proxy.port", "33210"));
-                } catch (NumberFormatException e) {
-                    System.err.println("[WARN] 无效的代理端口配置，使用默认值 33210");
-                    PROXY_PORT = 33210;
-                }
-                
-                System.out.println("[INFO] WikipediaSearcher 代理配置: 启用=" + PROXY_ENABLED 
-                    + ", 主机=" + PROXY_HOST + ", 端口=" + PROXY_PORT);
-            } else {
-                System.out.println("[WARN] config.properties 未找到，使用默认代理配置");
-            }
-        } catch (Exception e) {
-            System.err.println("[ERROR] 读取 config.properties 失败: " + e.getMessage());
-        }
-    }
+    // 使用ConfigManager获取配置，避免重复加载配置文件，提高性能
+    private static final ConfigManager configManager = ConfigManager.getInstance();
 
     /**
      * 初始化 SSL 上下文，禁用证书验证（用于代理环境）
@@ -120,9 +84,9 @@ public class WikipediaSearcher {
             
             // 根据配置决定是否使用代理
             String result;
-            if (PROXY_ENABLED) {
+            if (configManager.isProxyOpen()) {
                 // 使用 HTTP 代理
-                result = searchWithHTTPProxy(url, PROXY_HOST, PROXY_PORT);
+                result = searchWithHTTPProxy(url, configManager.getProxyHost(), configManager.getProxyPort());
                 if (result.startsWith("Error:")) {
                     System.err.println("HTTP 代理失败，尝试直接连接...");
                     result = searchDirect(url);
@@ -280,9 +244,9 @@ public class WikipediaSearcher {
             
             // 根据配置决定是否使用代理
             String result;
-            if (PROXY_ENABLED) {
+            if (configManager.isProxyOpen()) {
                 // 使用 HTTP 代理
-                result = getArticleDetailWithHTTPProxy(url, PROXY_HOST, PROXY_PORT);
+                result = getArticleDetailWithHTTPProxy(url, configManager.getProxyHost(), configManager.getProxyPort());
                 if (result.startsWith("Error:")) {
                     System.err.println("HTTP 代理获取文章失败，尝试直接连接...");
                     result = getArticleDetailDirect(url);

@@ -1,5 +1,6 @@
 package LDS.Person.util;
 
+import LDS.Person.config.HttpClientFactory;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;

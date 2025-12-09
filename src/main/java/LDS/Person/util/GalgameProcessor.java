@@ -771,8 +771,14 @@ public class GalgameProcessor {
             System.out.println("\n第四步：打开浏览器...");
             openHtmlFile(htmlFilePath);
 
-            // 等待 5 秒钟以确保浏览器页面加载完成后再触发截图流程
-            try { Thread.sleep(5000); } catch (InterruptedException ignored) { }
+            // 等待5秒钟以确保浏览器页面加载完成后再触发截图流程
+            // 使用适当的等待时间确保页面渲染完成
+            try { 
+                Thread.sleep(5000); 
+            } catch (InterruptedException e) { 
+                Thread.currentThread().interrupt();
+                System.err.println("[WARN] 等待浏览器加载被中断");
+            }
 
             // 第五步：截图
             System.out.println("\n第五步：进行截图...");

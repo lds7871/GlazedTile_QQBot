@@ -1,6 +1,7 @@
 package LDS.Person.tasks.MsgLisLogic;
 
 import com.alibaba.fastjson2.JSONObject;
+import LDS.Person.util.ConfigManager;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
@@ -13,9 +14,6 @@ import org.springframework.web.client.RestTemplate;
 
 import LDS.Person.util.SteamGameSearcher;
 
-import java.io.InputStream;
-import java.util.Properties;
-
 /**
  * Steam 游戏搜索逻辑处理器
  * 处理 Steam 游戏信息搜索和发送
@@ -27,25 +25,10 @@ public class SteamSearchLogic {
     @Autowired
     private RestTemplate restTemplate;
 
-    private static String NCAT_API_BASE = "http://0.0.0.0:3000";
-    private static String NCAT_AUTH_TOKEN = "";
-
-    // 静态初始化块：从 config.properties 读取配置
-    static {
-        Properties props = new Properties();
-        try (InputStream input = SteamSearchLogic.class.getClassLoader()
-                .getResourceAsStream("config.properties")) {
-            if (input != null) {
-                props.load(input);
-                NCAT_API_BASE = props.getProperty("NapCatApiBase", NCAT_API_BASE);
-                NCAT_AUTH_TOKEN = props.getProperty("NapCatAuthToken", NCAT_AUTH_TOKEN);
-            } else {
-                System.out.println("[WARN] config.properties 没有找到, 使用默认值");
-            }
-        } catch (Exception e) {
-            System.err.println("[ERROR] 无法读取 config.properties: " + e.getMessage());
-        }
-    }
+    // 使用ConfigManager获取配置，避免重复加载配置文件，提高性能
+    private static final ConfigManager configManager = ConfigManager.getInstance();
+    private static final String NCAT_API_BASE = configManager.getNapCatApiBase();
+    private static final String NCAT_AUTH_TOKEN = configManager.getNapCatAuthToken();
 
     /**
      * 处理 Steam 游戏搜索指令

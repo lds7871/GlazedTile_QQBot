@@ -4,6 +4,7 @@ import com.alibaba.fastjson2.JSONObject;
 
 import LDS.Person.config.NapCatTaskIsOpen;
 import LDS.Person.util.DSchatNcatQQ;
+import LDS.Person.util.ConfigManager;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -15,8 +16,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpServerErrorException;
 
-import java.io.InputStream;
-import java.util.Properties;
 import java.util.Random;
 
 /**
@@ -30,28 +29,15 @@ public class MsgLisATTask {
     @Autowired
     private RestTemplate restTemplate;
 
-    private static String NCAT_API_BASE = "00";
-    private static String NCAT_AUTH_TOKEN = "0000";
-    private static String BOT_QQ_ID = "0000";
-
-    // 静态初始化块：从 config.properties 读取配置
-    static {
-        Properties props = new Properties();
-
-        try (InputStream input = MsgLisATTask.class.getClassLoader()
-                .getResourceAsStream("config.properties")) {
-            if (input != null) {
-                props.load(input);
-                NCAT_API_BASE = props.getProperty("NapCatApiBase", NCAT_API_BASE);
-                NCAT_AUTH_TOKEN = props.getProperty("NapCatAuthToken", NCAT_AUTH_TOKEN);
-                BOT_QQ_ID = props.getProperty("NapcatQQID", BOT_QQ_ID);
-            } else {
-                System.out.println("[WARN] config.properties 没有找到, 会使用不可用的默认值");
-            }
-        } catch (Exception e) {
-            System.err.println("[ERROR] 无法读取 config.properties: " + e.getMessage());
-        }
-    }
+    // 使用ConfigManager获取配置，避免重复加载配置文件，提高性能
+    private static final ConfigManager configManager = ConfigManager.getInstance();
+    private static final String NCAT_API_BASE = configManager.getNapCatApiBase();
+    private static final String NCAT_AUTH_TOKEN = configManager.getNapCatAuthToken();
+    private static final String BOT_QQ_ID = configManager.getNapcatQQID();
+    
+    // 重试相关常量
+    private static final long RETRY_BASE_DELAY_MS = 1000L;          // 基础重试延迟（毫秒）
+    private static final long SERVER_ERROR_RETRY_DELAY_MS = 2000L;  // 服务器错误重试延迟（毫秒）
 
     /**
      * 处理接收到的 WebSocket 消息
@@ -207,24 +193,31 @@ public class MsgLisATTask {
                     log.error("❌ 第 {} 次发送失败 - 群ID: {}，HTTP状态: {}", i, groupId, apiResponse.getStatusCode());
                 }
 
-                // 重试前等待一段时间
+                // 重试前等待一段时间，使用指数退避策略
                 if (i < retryCount) {
-                    long waitTime = 1000 * i; // 等待时间递增：1秒、2秒、3秒
+                    long waitTime = RETRY_BASE_DELAY_MS * i; // 等待时间递增：1秒、2秒
                     log.info("等待 {} 毫秒后进行第 {} 次重试...", waitTime, i + 1);
-                    Thread.sleep(waitTime);
+                    try {
+                        Thread.sleep(waitTime);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        log.warn("重试等待被中断");
+                        break;
+                    }
                 }
 
             } catch (HttpServerErrorException e) {
                 log.error("❌ 第 {} 次发送异常 - 群ID: {}，HTTP错误: {} {}", i, groupId, e.getRawStatusCode(), e.getStatusText());
 
-                // 如果是 502/503/504 等服务器错误，进行重试
+                // 如果是 502/503/504 等服务器错误，进行重试，使用指数退避策略
                 if (i < retryCount && (e.getRawStatusCode() >= 500)) {
                     try {
-                        long waitTime = 2000 * i; // 等待时间：2秒、4秒、6秒
+                        long waitTime = SERVER_ERROR_RETRY_DELAY_MS * i; // 等待时间：2秒、4秒
                         log.info("服务器错误，等待 {} 毫秒后进行第 {} 次重试...", waitTime, i + 1);
                         Thread.sleep(waitTime);
                     } catch (InterruptedException ie) {
                         Thread.currentThread().interrupt();
+                        log.warn("重试等待被中断");
                         break;
                     }
                 } else {

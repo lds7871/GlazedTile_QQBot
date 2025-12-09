@@ -1,6 +1,7 @@
 package LDS.Person.tasks.MsgLisLogic;
 
 import com.alibaba.fastjson2.JSONObject;
+import LDS.Person.util.ConfigManager;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -11,11 +12,9 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Properties;
 import java.util.Random;
 
 /**
@@ -41,28 +40,15 @@ public class KeywordTriggerLogic {
   private static final List<String> KEYWORDS_MoCai = Arrays.asList(
       "魔裁", "少女", "魔法", "审判");
 
-  private static String NCAT_API_BASE = "00";
-  private static String NCAT_AUTH_TOKEN = "0000";
+  // 使用ConfigManager获取配置，避免重复加载配置文件，提高性能
+  private static final ConfigManager configManager = ConfigManager.getInstance();
+  private static final String NCAT_API_BASE = configManager.getNapCatApiBase();
+  private static final String NCAT_AUTH_TOKEN = configManager.getNapCatAuthToken();
 
   private static final Random RANDOM = new Random();
-
-  // 静态初始化块：从 config.properties 读取配置
-  static {
-    Properties props = new Properties();
-
-    try (InputStream input = KeywordTriggerLogic.class.getClassLoader()
-        .getResourceAsStream("config.properties")) {
-      if (input != null) {
-        props.load(input);
-        NCAT_API_BASE = props.getProperty("NapCatApiBase", NCAT_API_BASE);
-        NCAT_AUTH_TOKEN = props.getProperty("NapCatAuthToken", NCAT_AUTH_TOKEN);
-      } else {
-        System.out.println("[WARN] config.properties 没有找到, 会使用不可用的默认值");
-      }
-    } catch (Exception e) {
-      System.err.println("[ERROR] 无法读取 config.properties: " + e.getMessage());
-    }
-  }
+  
+  // 预定义图片类型数组，避免每次调用时创建新的ArrayList，提高性能
+  private static final String[] IMAGE_TYPES = {"BIGHead", "MoCai", "Memes"};
 
   /**
    * 触发关键字响应
@@ -219,16 +205,11 @@ public class KeywordTriggerLogic {
   /**
    * 随机选择一个图片类型
    * 
-   * @return "BIGHead" 或 "MoCai".......
+   * @return "BIGHead" 或 "MoCai" 或 "Memes"
    */
   private String getRandomImageType() {
-    ArrayList<String> 随机抽取 = new ArrayList<String>();
-    随机抽取.add("BIGHead");
-    随机抽取.add("MoCai");
-    随机抽取.add("Memes");
-
-    return 随机抽取.get(RANDOM.nextInt(随机抽取.size()));
-
+    // 直接从预定义数组中随机选择，避免每次创建ArrayList
+    return IMAGE_TYPES[RANDOM.nextInt(IMAGE_TYPES.length)];
   }
 
   /**

@@ -1,10 +1,9 @@
 package LDS.Person.util;
 
+import LDS.Person.util.ConfigManager;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Properties;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -23,29 +22,15 @@ public class SteamGameSearcher {
     private static final String STEAM_API_URL = "https://store.steampowered.com/api/appdetails?appids=";
     private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36";
 
-    private static boolean PROXY_IS_OPEN = false;
-    private static String PROXY_HOST = "127.0.0.1";
-    private static int PROXY_PORT = 32110;
+    // 使用ConfigManager获取配置，避免重复加载配置文件，提高性能
+    private static final ConfigManager configManager = ConfigManager.getInstance();
+    private static final boolean PROXY_IS_OPEN = configManager.isProxyOpen();
+    private static final String PROXY_HOST = configManager.getProxyHost();
+    private static final int PROXY_PORT = configManager.getProxyPort();
 
-    // 静态初始化块：从 config.properties 读取代理配置
     static {
-        Properties props = new Properties();
-        try (InputStream input = SteamGameSearcher.class.getClassLoader()
-                .getResourceAsStream("config.properties")) {
-            if (input != null) {
-                props.load(input);
-                PROXY_IS_OPEN = Boolean.parseBoolean(props.getProperty("proxy.is.open", "false"));
-                PROXY_HOST = props.getProperty("proxy.host", PROXY_HOST);
-                PROXY_PORT = Integer.parseInt(props.getProperty("proxy.port", "8080"));
-                
-                if (PROXY_IS_OPEN) {
-                    System.out.println("[CONFIG] Steam 代理已启用" );
-                }
-            } else {
-                System.out.println("[WARN] config.properties 没有找到, 使用默认配置");
-            }
-        } catch (Exception e) {
-            System.err.println("[ERROR] 无法读取 config.properties: " + e.getMessage());
+        if (PROXY_IS_OPEN) {
+            System.out.println("[CONFIG] Steam 代理已启用");
         }
     }
 

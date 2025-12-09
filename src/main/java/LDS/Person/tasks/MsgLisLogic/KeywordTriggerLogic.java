@@ -46,6 +46,9 @@ public class KeywordTriggerLogic {
   private static final String NCAT_AUTH_TOKEN = configManager.getNapCatAuthToken();
 
   private static final Random RANDOM = new Random();
+  
+  // 预定义图片类型数组，避免每次调用时创建新的ArrayList，提高性能
+  private static final String[] IMAGE_TYPES = {"BIGHead", "MoCai", "Memes"};
 
   /**
    * 触发关键字响应
@@ -202,16 +205,11 @@ public class KeywordTriggerLogic {
   /**
    * 随机选择一个图片类型
    * 
-   * @return "BIGHead" 或 "MoCai".......
+   * @return "BIGHead" 或 "MoCai" 或 "Memes"
    */
   private String getRandomImageType() {
-    ArrayList<String> 随机抽取 = new ArrayList<String>();
-    随机抽取.add("BIGHead");
-    随机抽取.add("MoCai");
-    随机抽取.add("Memes");
-
-    return 随机抽取.get(RANDOM.nextInt(随机抽取.size()));
-
+    // 直接从预定义数组中随机选择，避免每次创建ArrayList
+    return IMAGE_TYPES[RANDOM.nextInt(IMAGE_TYPES.length)];
   }
 
   /**

@@ -2,6 +2,7 @@ package LDS.Person.tasks.MsgLisLogic;
 
 import com.alibaba.fastjson2.JSONObject;
 import com.alibaba.fastjson2.JSONArray;
+import LDS.Person.util.ConfigManager;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -13,8 +14,6 @@ import org.springframework.http.ResponseEntity;
 import LDS.Person.util.GalgameProcessor;
 import LDS.Person.dto.request.SendGroupImageRequest;
 
-import java.io.InputStream;
-import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -36,26 +35,10 @@ public class GalgameSearchLogic {
     // 本地 API 端点（推荐使用）
     private static final String LOCAL_SEND_IMAGE_URL = "http://localhost:8090/api/ncat/send/group-image";
 
-    private static String NCAT_API_BASE = "00";
-    private static String NCAT_AUTH_TOKEN = "0000";
-
-    // 静态初始化块：从 config.properties 读取配置
-    static {
-        Properties props = new Properties();
-
-        try (InputStream input = GalgameSearchLogic.class.getClassLoader()
-                .getResourceAsStream("config.properties")) {
-            if (input != null) {
-                props.load(input);
-                NCAT_API_BASE = props.getProperty("NapCatApiBase", NCAT_API_BASE);
-                NCAT_AUTH_TOKEN = props.getProperty("NapCatAuthToken", NCAT_AUTH_TOKEN);
-            } else {
-                System.out.println("[WARN] config.properties 没有找到, 会使用不可用的默认值");
-            }
-        } catch (Exception e) {
-            System.err.println("[ERROR] 无法读取 config.properties: " + e.getMessage());
-        }
-    }
+    // 使用ConfigManager获取配置，避免重复加载配置文件，提高性能
+    private static final ConfigManager configManager = ConfigManager.getInstance();
+    private static final String NCAT_API_BASE = configManager.getNapCatApiBase();
+    private static final String NCAT_AUTH_TOKEN = configManager.getNapCatAuthToken();
 
     /**
      * 处理 Galgame 搜索请求

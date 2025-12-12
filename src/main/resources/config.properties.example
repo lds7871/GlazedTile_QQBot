@@ -24,14 +24,14 @@ NapCatAuthToken=YOUR_NAPCAT_AUTH_TOKEN
 NapcatQQID=YOUR_QQ_BOT_ID
 
 #========== WebSocket配置 ==========
-# 本地 Spring 应用的 WebSocket 端点
+# 本地 Spring 应用的 WebSocket 端点(本地连接测试，实际运行未使用)
 WS_URL_LOCAL=ws://localhost:7090/onebot
 
-#  NapCat 服务器的 WebSocket 端点 本地端点就填写Websocket服务器配置上的URL
-WS_URL_REMOTE=ws://YOUR_SERVER_IP:3001
+#  NapCat 服务器的 WebSocket 端点 本地端点就填写Websocket服务器配置上的URL（注意包含 access_token 参数）
+WS_URL_REMOTE=ws://YOUR_SERVER_IP:3001?access_token=PASSWORD
 
-# 选择要连接的服务器（LOCAL 或 REMOTE 建议Local）
+# 这个就这样不用改动
 WS_URL_SELECT=LOCAL
 
-# WebSocket 认证令牌(其实没有使用，我的WS没有token)
+# WebSocket 认证令牌(用于本地连接)
 WS_TOKEN=YOUR_WEBSOCKET_TOKEN

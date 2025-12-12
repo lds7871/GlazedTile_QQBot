@@ -13,7 +13,7 @@ public class WebSocketConstants {
     public static final String REMOTE_NAPCAT_URL = "ws://115.190.170.56:3001";
 
     // ==================== 心跳配置 ====================
-    public static final int HEARTBEAT_INTERVAL_MS = 129500; // 129.5秒（NapCat 推荐 30秒）
+    public static final int HEARTBEAT_INTERVAL_MS = 25000; // 25秒（NapCat 推荐 30秒）
     public static final int CONNECTION_TIMEOUT_MS = 100000; // 100秒连接超时
 
     // ==================== 消息类型 ====================

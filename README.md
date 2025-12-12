@@ -119,7 +119,7 @@ cp src/main/resources/config.properties.example src/main/resources/config.proper
 ## WebSocket 与 NapCat
 
 - WebSocket 客户端位于 `websocket/OneBotWebSocketClient.java`，连接 NapCat 提供的 WebSocket API。
-- `config.properties` 中 `WS_URL_LOCAL` 与 `WS_URL_REMOTE` 控制连接哪个 NapCat 实例，`WS_URL_SELECT` 设定使用本地还是远程。
+- `config.properties` 中 `WS_URL_REMOTE` 控制连接 NapCat 实例。
 - 认证令牌 `WS_TOKEN` 需要与 NapCat 配置一致（但因为我WS没有配置Token，逻辑代码并没有使用此字段，详见说明文档）。
 
 ## 日志与调试

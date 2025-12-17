@@ -47,7 +47,8 @@ public class ConfigManager {
                 .getResourceAsStream("config.properties")) {
             if (input != null) {
                 properties.load(input);
-                System.out.println("[ConfigManager] 配置文件加载成功");
+                printConfigDetails();
+                
             } else {
                 System.out.println("[WARN] config.properties 未找到，使用默认配置");
             }
@@ -119,6 +120,53 @@ public class ConfigManager {
             lock.writeLock().unlock();
         }
     }
+
+
+    /**
+     * 打印完整的配置信息
+     */
+    private void printConfigDetails() {
+        System.out.println("════════════════════════════════════════════════════════════");
+        System.out.println("[ConfigManager] 配置文件加载成功：");
+        System.out.println("════════════════════════════════════════════════════════════");
+        
+        if (properties.isEmpty()) {
+            System.out.println("  （无配置项）");
+        } else {
+            properties.keySet().stream()
+                    .map(Object::toString)
+                    .sorted()
+                    .forEach(key -> {
+                        String value = properties.getProperty(key);
+                        // 对敏感信息进行脱敏处理
+                        String displayValue = maskSensitiveValue(key, value);
+                        System.out.println("  " + key + " = " + displayValue);
+                    });
+        }
+        
+        System.out.println("════════════════════════════════════════════════════════════");
+    }
+
+    /**
+     * 对敏感信息进行脱敏处理
+     */
+    private String maskSensitiveValue(String key, String value) {
+        String lowerKey = key.toLowerCase();
+        
+        // 对密码、令牌、密钥等敏感字段进行脱敏
+        if (lowerKey.contains("password") || lowerKey.contains("token") || 
+            lowerKey.contains("secret") || lowerKey.contains("key") ||
+            lowerKey.contains("auth") || lowerKey.contains("key")) {
+            if (value != null && value.length() > 0) {
+                return "***" + (value.length() > 3 ? value.substring(value.length() - 3) : "");
+            }
+            return "***";
+        }
+        
+        return value;
+    }
+    
+
     
     // 常用配置的便捷方法
     

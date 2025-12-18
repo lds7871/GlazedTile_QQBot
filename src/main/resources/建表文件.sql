@@ -12,18 +12,19 @@ CREATE TABLE vip_id (
 create table task_open
 (
     param_name varchar(100) not null comment '任务名称',
-    state      tinyint(1)   not null comment '状态'
-)comment '任务状态表';
+    state      tinyint(1)   not null comment '状态',
+    info       varchar(255) null comment '注释'
+);
 
 INSERT INTO task_open (param_name, state) VALUES
-('isMsgLisATTask', 1),
-('isMsgLisKeyWordTask', 1),
-('isMsgLisUserCmdTask', 1),
-('isMsgLisVipCmdTask', 1),
-('isMsgSchTask', 1),
-('isDailyGreetingCreateTask', 1),
-('isDailyGreetingMorningTask', 1),
-('isDailyGreetingEveningTask', 1);
+('isMsgLisATTask', 1,'@消息监听任务'),
+('isMsgLisKeyWordTask', 1,'关键词监听任务'),
+('isMsgLisUserCmdTask', 1,'用户命令监听任务'),
+('isMsgLisVipCmdTask', 1,'VIP命令监听任务'),
+('isMsgSchTask', 1,'固定时段主动消息任务'),
+('isDailyGreetingCreateTask', 1,'每日问候创建任务'),
+('isDailyGreetingMorningTask', 1,'每日早安问候任务'),
+('isDailyGreetingEveningTask', 1,'每日晚安问候任务');
 
 
 ##########################

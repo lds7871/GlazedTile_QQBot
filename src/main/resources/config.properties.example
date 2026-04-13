@@ -17,15 +17,16 @@ NapCatIsOpen=true
 # NapCat HTTP API 基础 URL（强烈建议本地服务）
 NapCatApiBase=http://0.0.0.0:3000
 
-# NapCat HTTP 认证令牌（从 NapCat 配置中获取）
-NapCatAuthToken=YOUR_NAPCAT_AUTH_TOKEN
+# NapCat HTTP 认证令牌（从 NapCat WEBUI配置）
+NapCatAuthToken=0000
 
 # QQ 机器人 ID（Napcat 运行的 QQ 号）
 NapcatQQID=YOUR_QQ_BOT_ID
 
 #========== WebSocket配置 ==========
-# NapCat 服务器的 WebSocket 端点（注意必须包含 access_token 参数）
-WS_URL_REMOTE=ws://YOUR_SERVER_IP:3001?access_token=YOUR_ACCESS_TOKEN
+# NapCat 服务器的 WebSocket 端点（ WEBUI配置 注意必须包含 access_token 参数）
+WS_URL_REMOTE=ws://0.0.0.0:3001?access_token=0000
 
 # WebSocket 认证令牌（再次输入access_token）
-WS_TOKEN=YOUR_WEBSOCKET_TOKEN
+WS_TOKEN=0000
+

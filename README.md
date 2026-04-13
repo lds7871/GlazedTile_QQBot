@@ -3,6 +3,7 @@
 ## 概述
 
 `GlazedTile_QQBot` 是一个基于 Spring Boot 的 QQ 机器人项目，通过使用OneBot协议依靠NapCat框架来对Napcat本地HTTP接口二次封装和WS消息接受并格式化，提供消息收发、群组任务、WebSocket 通信和定时任务自动化。
+- 目前项目正在重新修改架构并简化移除数据库，新的更新请看simplify分支
 
 ## 特性
 

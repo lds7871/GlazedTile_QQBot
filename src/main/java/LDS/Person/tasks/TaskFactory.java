@@ -30,7 +30,7 @@ import org.springframework.web.client.RestTemplate;
  * 4. 定时型任务：添加 @Scheduled(cron="...") 注解
  */
 @Slf4j
-public class TaskFactory {
+public final class TaskFactory {
 
     private static final ConfigManager CONFIG = ConfigManager.getInstance();
     private static final String NCAT_API_BASE = CONFIG.getNapCatApiBase();
@@ -223,7 +223,7 @@ public class TaskFactory {
     // ==================== 内部工具方法 ====================
 
     /**
-     * 创建带认证的 HTTP 请求头
+     * 创建带认证的 HTTP 请求头（供外部 Task 复用）
      */
     public static HttpHeaders createAuthHeaders() {
         HttpHeaders headers = new HttpHeaders();
@@ -260,6 +260,8 @@ public class TaskFactory {
     /**
      * 群聊消息信息数据类
      */
+    @lombok.Getter
+    @lombok.AllArgsConstructor
     public static class GroupMessageInfo {
         private final Long groupId;
         private final Long userId;
@@ -267,22 +269,5 @@ public class TaskFactory {
         private final String displayName;
         private final String nickname;
         private final String card;
-
-        public GroupMessageInfo(Long groupId, Long userId, String rawMessage,
-                String displayName, String nickname, String card) {
-            this.groupId = groupId;
-            this.userId = userId;
-            this.rawMessage = rawMessage;
-            this.displayName = displayName;
-            this.nickname = nickname;
-            this.card = card;
-        }
-
-        public Long getGroupId() { return groupId; }
-        public Long getUserId() { return userId; }
-        public String getRawMessage() { return rawMessage; }
-        public String getDisplayName() { return displayName; }
-        public String getNickname() { return nickname; }
-        public String getCard() { return card; }
     }
 }

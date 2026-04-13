@@ -1,4 +1,4 @@
-package LDS.Person.websocket.config;
+package LDS.Person.websocket;
 
 /**
  * WebSocket 配置常量类

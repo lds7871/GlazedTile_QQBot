@@ -1,39 +1,35 @@
 package LDS.Person.websocket;
 
-import java.io.InputStream;
 import java.net.URI;
-import java.util.Properties;
 
-import LDS.Person.websocket.base.BaseWebSocketClient;
-import LDS.Person.websocket.base.BaseWebSocketClientHandler;
-import LDS.Person.websocket.config.WebSocketConstants;
+import LDS.Person.config.ConfigManager;
+import LDS.Person.tasks.MsgLisATTask;
+import LDS.Person.util.OneBotMessageFormatter;
+import com.alibaba.fastjson2.JSONObject;
+import lombok.extern.slf4j.Slf4j;
+import org.java_websocket.handshake.ServerHandshake;
 
 /**
  * OneBot 远程客户端 - 连接到远程 NapCat 服务器并转发消息到 Spring WebSocket
- * 架构：NapCat (ws://115.190.170.56:3001?access_token=xxx) -> RemoteOneBotClient
+ * 架构：NapCat (ws://remote:3001?access_token=xxx) -> RemoteOneBotClient
  * -> Spring Server (ws://localhost:8090/onebot)
  */
+@Slf4j
 public class RemoteOneBotClient extends BaseWebSocketClient {
 
-    private static String WS_URL_REMOTE;
+    private static final String WS_URL_REMOTE;
+    private static MsgLisATTask msgLisATTask;
 
-    // 从配置文件加载 WebSocket URL
     static {
-        Properties props = new Properties();
-        try (InputStream input = RemoteOneBotClient.class.getClassLoader()
-                .getResourceAsStream("config.properties")) {
-            if (input != null) {
-                props.load(input);
-                WS_URL_REMOTE = props.getProperty("WS_URL_REMOTE", "ws://0.0.0.0:3001");
-                System.out.println("[CONFIG] 远程 WebSocket URL: " + WS_URL_REMOTE);
-            } else {
-                WS_URL_REMOTE = WebSocketConstants.REMOTE_NAPCAT_URL;
-                System.out.println("[WARN] config.properties not found, using default URL");
-            }
-        } catch (Exception e) {
-            System.err.println("[ERROR] Failed to load config.properties: " + e.getMessage());
-            WS_URL_REMOTE = WebSocketConstants.REMOTE_NAPCAT_URL;
-        }
+        WS_URL_REMOTE = ConfigManager.getInstance().getWsUrlRemote();
+        log.info("远程 WebSocket URL: {}", WS_URL_REMOTE);
+    }
+
+    /**
+     * 设置消息监听任务（由 Spring 容器注入）
+     */
+    public static void setMessageListenerTask(MsgLisATTask task) {
+        msgLisATTask = task;
     }
 
     @Override
@@ -43,13 +39,67 @@ public class RemoteOneBotClient extends BaseWebSocketClient {
 
     @Override
     protected String getWebSocketUrl() {
-        // 从配置文件读取的 URL（包含 access_token 参数）
         return WS_URL_REMOTE;
     }
 
     @Override
     protected BaseWebSocketClientHandler createWebSocketHandler(URI uri) {
-        return new RemoteWebSocketClientHandler(uri);
+        return new RemoteHandler(uri);
+    }
+
+    /**
+     * 内部处理器 - 处理远程 NapCat 消息并转发
+     */
+    private static class RemoteHandler extends BaseWebSocketClientHandler {
+
+        RemoteHandler(URI uri) {
+            super(uri);
+        }
+
+        @Override
+        public void onOpen(ServerHandshake handshakeData) {
+            super.onOpen(handshakeData);
+            log.info("[REMOTE] 远程连接已打开，状态码: {}", handshakeData.getHttpStatus());
+        }
+
+        @Override
+        public void onMessage(String message) {
+            try {
+                JSONObject json = JSONObject.parseObject(message);
+                String postType = json.getString("post_type");
+                String metaEventType = json.getString("meta_event_type");
+
+                // 屏蔽心跳消息
+                boolean isHeartbeat = WebSocketConstants.POST_TYPE_META_EVENT.equals(postType)
+                        && WebSocketConstants.META_EVENT_TYPE_HEARTBEAT.equals(metaEventType);
+
+                // 屏蔽 API 响应消息
+                boolean isStatusResponse = json.containsKey("status") && json.containsKey("retcode")
+                        && json.containsKey("echo");
+
+                if (!isHeartbeat && !isStatusResponse) {
+                    String formattedMessage = OneBotMessageFormatter.formatMessage(json);
+                    log.info("[REMOTE] {}", formattedMessage);
+
+                    // 触发消息监听任务
+                    if (msgLisATTask != null) {
+                        msgLisATTask.handleMessage(json);
+                    }
+                }
+
+                // 转发到 Spring WebSocket 客户端
+                OneBotWebSocketHandler.broadcastToClients(message);
+
+            } catch (Exception e) {
+                log.error("[REMOTE] 处理消息出错: {}", e.getMessage(), e);
+            }
+        }
+
+        @Override
+        public void onClose(int code, String reason, boolean remote) {
+            super.onClose(code, reason, remote);
+            log.info("[REMOTE] 远程连接已关闭，代码: {}，原因: {}", code, reason);
+        }
     }
 
     /**
@@ -58,16 +108,11 @@ public class RemoteOneBotClient extends BaseWebSocketClient {
     public static void main(String[] args) {
         RemoteOneBotClient client = new RemoteOneBotClient();
         try {
-            // 启动客户端
             client.start();
-
-            // 保持连接
-            System.out.println(WebSocketConstants.LOG_PREFIX_INFO + " 按 Ctrl+C 退出程序...");
+            log.info("按 Ctrl+C 退出程序...");
             Thread.currentThread().join();
-
         } catch (Exception e) {
-            System.err.println(WebSocketConstants.LOG_PREFIX_ERROR + " 程序运行出错: " + e.getMessage());
-            e.printStackTrace();
+            log.error("程序运行出错: {}", e.getMessage(), e);
         } finally {
             client.stop();
         }

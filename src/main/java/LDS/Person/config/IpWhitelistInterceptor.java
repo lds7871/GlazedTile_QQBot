@@ -2,9 +2,6 @@ package LDS.Person.config;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.support.GeneratedKeyHolder;
-import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.util.ContentCachingRequestWrapper;
@@ -14,8 +11,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * IP 白名单拦截器 - 限制接口只能通过白名单IP访问，或通过有效的pass_token绕过
@@ -38,7 +33,6 @@ import java.util.concurrent.ConcurrentMap;
 public class IpWhitelistInterceptor implements HandlerInterceptor {
 
     private final SecurityConfig securityConfig;
-    private final JdbcTemplate jdbcTemplate;
 
     /**
      * 缓存的IP白名单Set，避免每次请求都创建新对象
@@ -61,17 +55,10 @@ public class IpWhitelistInterceptor implements HandlerInterceptor {
     private int lastTokenConfigHash = 0;
 
     /**
-     * 缓存最近请求，用于合并/error记录
-     * key: IP地址, value: 最近请求的详细信息
-     */
-    private final ConcurrentMap<String, RecentRequest> recentRequests = new ConcurrentHashMap<>();
-
-    /**
      * 构造函数注入，提升可测试性
      */
-    public IpWhitelistInterceptor(SecurityConfig securityConfig, JdbcTemplate jdbcTemplate) {
+    public IpWhitelistInterceptor(SecurityConfig securityConfig) {
         this.securityConfig = securityConfig;
-        this.jdbcTemplate = jdbcTemplate;
     }
 
     @Override
@@ -156,40 +143,18 @@ public class IpWhitelistInterceptor implements HandlerInterceptor {
      * 将访问记录写入数据库表 `api_log`。
      * states: 1 表示通过，0 表示拒绝
      * 
-     * 优化逻辑：
-     * 1. 不记录 favicon.ico 和直接的 /error 请求
-     * 2. 对于 /error 请求，尝试合并之前的相关请求状态为失败
-     * 3. 其他请求正常记录并缓存用于后续合并
+     * 简化版本：仅通过日志记录，不写入数据库
      */
     private void logAccess(String ip, String api, int states, HttpServletRequest request) {
-        if (jdbcTemplate == null) {
-            return;
-        }
-
         // 不记录 favicon.ico 请求
-        if (api.equals("/favicon.ico")) {
-            return;
-        }
-
-        // 特殊处理 /error 请求
-        if (api.equals("/error")) {
-            handleErrorPageRequest(ip, request);
+        if (api.equals("/favicon.ico") || api.equals("/error")) {
             return;
         }
 
         try {
             String method = request.getMethod();
-            String requestBody = getRequestBody(request);
-            String detailedApi = method + " " + api + (requestBody != null ? " | Body: " + requestBody : "");
-
-            // 正常记录请求
-            int insertedId = insertLogRecord(ip, detailedApi, states);
-
-            // 缓存请求信息，用于后续可能的合并
-            if (insertedId > 0) {
-                recentRequests.put(ip, new RecentRequest(detailedApi, System.currentTimeMillis(), insertedId));
-            }
-
+            String stateText = states == 1 ? "通过" : "拒绝";
+            log.debug("访问记录 - IP: {}, {} {} [{}]", ip, method, api, stateText);
         } catch (Exception ex) {
             log.error("记录访问日志失败 - ip: {}, api: {}, states: {}", ip, api, states, ex);
         }
@@ -466,106 +431,6 @@ public class IpWhitelistInterceptor implements HandlerInterceptor {
         } catch (Exception e) {
             log.debug("读取请求体失败: {}", e.getMessage());
             return "[READ_ERROR]";
-        }
-    }
-
-    /**
-     * 插入日志记录到数据库
-     * 
-     * @param ip     IP地址
-     * @param api    API详情
-     * @param states 状态
-     * @return 插入记录的ID，如果失败返回-1
-     */
-    private int insertLogRecord(String ip, String api, int states) {
-        try {
-            KeyHolder keyHolder = new GeneratedKeyHolder();
-            jdbcTemplate.update(connection -> {
-                var ps = connection.prepareStatement(
-                        "INSERT INTO api_log (ip, api, states, create_time) VALUES (?, ?, ?, CURRENT_TIMESTAMP)",
-                        new String[] { "id" });
-                ps.setString(1, ip);
-                ps.setString(2, api);
-                ps.setInt(3, states);
-                return ps;
-            }, keyHolder);
-
-            Number key = keyHolder.getKey();
-            return key != null ? key.intValue() : -1;
-        } catch (Exception ex) {
-            log.error("插入日志记录失败 - ip: {}, api: {}, states: {}", ip, api, states, ex);
-            return -1;
-        }
-    }
-
-    /**
-     * 处理错误页面请求
-     * 检查是否由于异常导致的错误，如果是则更新之前的请求状态
-     * 
-     * @param ip      IP地址
-     * @param request HTTP请求
-     */
-    private void handleErrorPageRequest(String ip, HttpServletRequest request) {
-        // 检查是否由于异常导致的错误页面
-        Object requestFailed = request.getAttribute("request_failed");
-        if (requestFailed != null && (Boolean) requestFailed) {
-            // 这是由于异常导致的错误页面，更新之前的请求状态
-            mergePreviousRequestToError(ip);
-        }
-        // 否则是直接访问/error页面，不记录
-    }
-
-    /**
-     * 将之前的请求状态合并为错误状态
-     * 当收到/error请求时，更新该IP最近的请求状态为失败
-     * 
-     * @param ip IP地址
-     */
-    private void mergePreviousRequestToError(String ip) {
-        RecentRequest recent = recentRequests.get(ip);
-        if (recent != null) {
-            // 检查时间是否在合理范围内（比如10秒内，因为异常处理可能有延迟）
-            long timeDiff = System.currentTimeMillis() - recent.getTimestamp();
-            if (timeDiff < 10000) { // 10秒内
-                try {
-                    // 更新数据库中的状态为失败
-                    jdbcTemplate.update(
-                            "UPDATE api_log SET states = 0 WHERE id = ?",
-                            recent.getId());
-                    log.debug("合并请求状态为失败 - IP: {}, 原API: {}", ip, recent.getApi());
-                } catch (Exception ex) {
-                    log.error("更新请求状态失败 - IP: {}, ID: {}", ip, recent.getId(), ex);
-                }
-            }
-            // 清除缓存
-            recentRequests.remove(ip);
-        }
-    }
-
-    /**
-     * 最近请求信息类，用于缓存和合并/error记录
-     */
-    private static class RecentRequest {
-        private final String api;
-        private final long timestamp;
-        private final int id; // 数据库记录ID
-
-        public RecentRequest(String api, long timestamp, int id) {
-            this.api = api;
-            this.timestamp = timestamp;
-            this.id = id;
-        }
-
-        public String getApi() {
-            return api;
-        }
-
-        public long getTimestamp() {
-            return timestamp;
-        }
-
-        public int getId() {
-            return id;
         }
     }
 }

@@ -2,15 +2,14 @@ package LDS.Person;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.scheduling.annotation.EnableScheduling;
-import org.mybatis.spring.annotation.MapperScan;
 
 /**
  * SpringBoot 启动应用类
  */
-@SpringBootApplication
+@SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})
 @EnableScheduling
-@MapperScan("LDS.Person.jmapper")
 public class XAutoApplication {
 
     public static void main(String[] args) {

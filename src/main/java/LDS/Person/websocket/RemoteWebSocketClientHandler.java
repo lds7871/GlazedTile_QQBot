@@ -3,9 +3,6 @@ package LDS.Person.websocket;
 import java.net.URI;
 
 import LDS.Person.tasks.MsgLisATTask;
-import LDS.Person.tasks.MsgLisKeyWordTask;
-import LDS.Person.tasks.MsgLisVipCmdTask;
-import LDS.Person.tasks.MsgLisUserCmdTask;
 import org.java_websocket.handshake.ServerHandshake;
 
 import com.alibaba.fastjson2.JSONObject;
@@ -22,9 +19,6 @@ import LDS.Person.websocket.config.WebSocketConstants;
 public class RemoteWebSocketClientHandler extends BaseWebSocketClientHandler {
 
     private static MsgLisATTask msgLisATTask;
-    private static MsgLisKeyWordTask msgLisKeyWordTask;
-    private static MsgLisVipCmdTask msgLisVipCmdTask;
-    private static MsgLisUserCmdTask msgLisUserCmdTask;
 
     public RemoteWebSocketClientHandler(URI uri) {
         super(uri);
@@ -35,27 +29,6 @@ public class RemoteWebSocketClientHandler extends BaseWebSocketClientHandler {
      */
     public static void setMessageListenerTask(MsgLisATTask task) {
         msgLisATTask = task;
-    }
-
-    /**
-     * 设置关键词监听任务（由 Spring 容器注入）
-     */
-    public static void setMessageListenerKeyWordTask(MsgLisKeyWordTask task) {
-        msgLisKeyWordTask = task;
-    }
-
-    /**
-     * 设置 VIP 白名单消息监听任务（由 Spring 容器注入）
-     */
-    public static void setMsgLisVipATTask(MsgLisVipCmdTask task) {
-        msgLisVipCmdTask = task;
-    }
-
-    /**
-     * 设置用户公共指令监听任务（由 Spring 容器注入）
-     */
-    public static void setMsgLisUserCmdTask(MsgLisUserCmdTask task) {
-        msgLisUserCmdTask = task;
     }
 
     @Override
@@ -82,21 +55,6 @@ public class RemoteWebSocketClientHandler extends BaseWebSocketClientHandler {
                 // 触发消息监听任务（自动回复处理）
                 if (msgLisATTask != null) {
                     msgLisATTask.handleMessage(json);
-                }
-
-                // 触发关键词监听任务
-                if (msgLisKeyWordTask != null) {
-                    msgLisKeyWordTask.handleMessage(json);
-                }
-
-                // 触发 VIP 白名单消息监听任务
-                if (msgLisVipCmdTask != null) {
-                    msgLisVipCmdTask.handleMessage(json);
-                }
-
-                // 触发用户公共指令监听任务
-                if (msgLisUserCmdTask != null) {
-                    msgLisUserCmdTask.handleMessage(json);
                 }
             }
 

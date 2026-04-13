@@ -1,8 +1,5 @@
 package LDS.Person.config;
 
-import LDS.Person.tasks.MsgLisKeyWordTask;
-import LDS.Person.tasks.MsgLisVipCmdTask;
-import LDS.Person.tasks.MsgLisUserCmdTask;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -30,15 +27,6 @@ public class RemoteOneBotClientConfig {
 
     @Autowired
     private MsgLisATTask msgLisATTask;
-
-    @Autowired
-    private MsgLisKeyWordTask msgLisKeyWordTask;
-
-    @Autowired
-    private MsgLisVipCmdTask msgLisVipCmdTask;
-
-    @Autowired
-    private MsgLisUserCmdTask msgLisUserCmdTask;
 
     private static boolean NCAT_IS_OPEN;
 
@@ -91,9 +79,6 @@ public class RemoteOneBotClientConfig {
 
             // 注入消息监听任务到 WebSocket 处理器
             RemoteWebSocketClientHandler.setMessageListenerTask(msgLisATTask);
-            RemoteWebSocketClientHandler.setMessageListenerKeyWordTask(msgLisKeyWordTask);
-            RemoteWebSocketClientHandler.setMsgLisVipATTask(msgLisVipCmdTask);
-            RemoteWebSocketClientHandler.setMsgLisUserCmdTask(msgLisUserCmdTask);
             System.out.println("[CONFIG] 消息监听任务已注入");
 
             if (!client.isConnected()) {

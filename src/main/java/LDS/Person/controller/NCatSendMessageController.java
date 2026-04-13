@@ -82,17 +82,18 @@ public class NCatSendMessageController {
                         .body(SendGroupMessageResponse.error("消息文本不能为空"));
             }
 
-           // log.info("准备发送群聊消息，群组ID: {}，消息: {}", request.getGroupId(), request.getText());
+            // log.info("准备发送群聊消息，群组ID: {}，消息: {}", request.getGroupId(),
+            // request.getText());
 
             // 构建请求体
             String messageText = request.getText();
             JSONObject requestBody = buildSendGroupMessageRequest(request.getGroupId(), messageText);
 
-           // log.debug("请求体: {}", requestBody.toJSONString());
+            // log.debug("请求体: {}", requestBody.toJSONString());
 
             // 调用 NapCat API
             String url = NCAT_API_BASE + "/send_group_msg";
-           // log.debug("调用 NapCat API: {}", url);
+            // log.debug("调用 NapCat API: {}", url);
 
             HttpHeaders headers = new HttpHeaders();
             headers.set("Authorization", "Bearer " + NCAT_AUTH_TOKEN);
@@ -109,7 +110,7 @@ public class NCatSendMessageController {
 
             // 解析响应
             JSONObject jsonResponse = JSON.parseObject(apiResponse.getBody());
-           // log.debug("API 响应: {}", jsonResponse.toJSONString());
+            // log.debug("API 响应: {}", jsonResponse.toJSONString());
 
             // 检查是否成功
             if (jsonResponse.containsKey("status") && !jsonResponse.getString("status").equals("ok")) {
@@ -127,7 +128,7 @@ public class NCatSendMessageController {
                 messageId = data.getInteger("message_id");
             }
 
-           // log.info("✅ 群聊消息发送成功，消息ID: {}", messageId);
+            // log.info("✅ 群聊消息发送成功，消息ID: {}", messageId);
 
             SendGroupMessageResponse response = SendGroupMessageResponse.success(messageId);
             response.setRawResponse(jsonResponse);
@@ -190,18 +191,18 @@ public class NCatSendMessageController {
                         .body(SendGroupMessageResponse.error("回复消息文本不能为空"));
             }
 
-            //log.info("准备回复群聊消息，群组ID: {}，被回复消息ID: {}，回复内容: {}",
-            //        request.getGroupId(), request.getMessageId(), request.getText());
+            // log.info("准备回复群聊消息，群组ID: {}，被回复消息ID: {}，回复内容: {}",
+            // request.getGroupId(), request.getMessageId(), request.getText());
 
             // 构建请求体
             JSONObject requestBody = buildReplyMessageRequest(request.getGroupId(),
                     request.getMessageId(), request.getText());
 
-            //log.debug("请求体: {}", requestBody.toJSONString());
+            // log.debug("请求体: {}", requestBody.toJSONString());
 
             // 调用 NapCat API
             String url = NCAT_API_BASE + "/send_group_msg";
-            //log.debug("调用 NapCat API: {}", url);
+            // log.debug("调用 NapCat API: {}", url);
 
             HttpHeaders headers = new HttpHeaders();
             headers.set("Authorization", "Bearer " + NCAT_AUTH_TOKEN);
@@ -218,7 +219,7 @@ public class NCatSendMessageController {
 
             // 解析响应
             JSONObject jsonResponse = JSON.parseObject(apiResponse.getBody());
-            //log.debug("API 响应: {}", jsonResponse.toJSONString());
+            // log.debug("API 响应: {}", jsonResponse.toJSONString());
 
             // 检查是否成功
             if (jsonResponse.containsKey("status") && !jsonResponse.getString("status").equals("ok")) {
@@ -236,7 +237,7 @@ public class NCatSendMessageController {
                 messageId = data.getInteger("message_id");
             }
 
-            //log.info("✅ 群聊回复消息发送成功，消息ID: {}", messageId);
+            // log.info("✅ 群聊回复消息发送成功，消息ID: {}", messageId);
 
             SendGroupMessageResponse response = SendGroupMessageResponse.success(messageId);
             response.setRawResponse(jsonResponse);
@@ -302,17 +303,18 @@ public class NCatSendMessageController {
                         .body(SendGroupMessageResponse.error("图片文件路径不能为空"));
             }
 
-            //log.info("准备发送群聊图片消息，群组ID: {}", request.getGroupId());
+            // log.info("准备发送群聊图片消息，群组ID: {}", request.getGroupId());
 
             // 构建请求体
             JSONObject requestBody = buildSendGroupImageRequest(request.getGroupId(), request.getFile());
 
-            //log.debug("请求体: {}", requestBody.toJSONString().length() > 50 ? requestBody.toJSONString().substring(0, 50)
-            //        : requestBody.toJSONString());
+            // log.debug("请求体: {}", requestBody.toJSONString().length() > 50 ?
+            // requestBody.toJSONString().substring(0, 50)
+            // : requestBody.toJSONString());
 
             // 调用 NapCat API
             String url = NCAT_API_BASE + "/send_group_msg";
-            //log.debug("调用 NapCat API: {}", url);
+            // log.debug("调用 NapCat API: {}", url);
 
             HttpHeaders headers = new HttpHeaders();
             headers.set("Authorization", "Bearer " + NCAT_AUTH_TOKEN);
@@ -329,7 +331,7 @@ public class NCatSendMessageController {
 
             // 解析响应
             JSONObject jsonResponse = JSON.parseObject(apiResponse.getBody());
-            //log.debug("API 响应: {}", jsonResponse.toJSONString());
+            // log.debug("API 响应: {}", jsonResponse.toJSONString());
 
             // 检查是否成功
             if (jsonResponse.containsKey("status") && !jsonResponse.getString("status").equals("ok")) {
@@ -347,7 +349,7 @@ public class NCatSendMessageController {
                 messageId = data.getInteger("message_id");
             }
 
-            //log.info("✅ 群聊图片消息发送成功，消息ID: {}", messageId);
+            // log.info("✅ 群聊图片消息发送成功，消息ID: {}", messageId);
 
             SendGroupMessageResponse response = SendGroupMessageResponse.success(messageId);
             response.setRawResponse(jsonResponse);

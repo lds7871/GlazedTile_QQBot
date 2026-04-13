@@ -42,11 +42,10 @@ public class NCatGetController {
     @Autowired
     private RestTemplate restTemplate;
 
-    private static String NCAT_API_BASE = "00";
+    private static String NCAT_API_BASE = "http://0.0.0.0:3000";
     private static String NCAT_AUTH_TOKEN = "0000";
 
-
-        // 静态初始化块：从 config.properties 读取配置
+    // 静态初始化块：从 config.properties 读取配置
     static {
         Properties props = new Properties();
 
@@ -94,7 +93,7 @@ public class NCatGetController {
 
             // 解析响应
             JSONObject jsonResponse = JSON.parseObject(apiResponse.getBody());
-            
+
             // 检查是否有错误
             if (jsonResponse.containsKey("status") && !jsonResponse.getString("status").equals("ok")) {
                 String errorMsg = jsonResponse.getString("message");
@@ -114,7 +113,7 @@ public class NCatGetController {
                 for (int i = 0; i < dataArray.size(); i++) {
                     JSONObject friendObj = dataArray.getJSONObject(i);
                     Map<String, Object> friend = new HashMap<>();
-                    
+
                     // 提取关键信息
                     friend.put("user_id", friendObj.get("user_id"));
                     friend.put("nickname", friendObj.get("nickname"));
@@ -122,7 +121,7 @@ public class NCatGetController {
                     friend.put("class_id", friendObj.get("class_id"));
                     friend.put("is_vip", friendObj.get("is_vip"));
                     friend.put("avatar", friendObj.get("avatar"));
-                    
+
                     friends.add(friend);
                 }
             }
@@ -177,7 +176,7 @@ public class NCatGetController {
 
             // 解析响应
             JSONObject jsonResponse = JSON.parseObject(apiResponse.getBody());
-            
+
             if (jsonResponse.containsKey("status") && !jsonResponse.getString("status").equals("ok")) {
                 String errorMsg = jsonResponse.getString("message");
                 log.error("NapCat API 返回错误: {}", errorMsg);
@@ -195,7 +194,7 @@ public class NCatGetController {
                 for (int i = 0; i < dataArray.size(); i++) {
                     JSONObject groupObj = dataArray.getJSONObject(i);
                     Map<String, Object> group = new HashMap<>();
-                    
+
                     group.put("group_id", groupObj.get("group_id"));
                     group.put("group_name", groupObj.get("group_name"));
                     group.put("member_count", groupObj.get("member_count"));
@@ -203,7 +202,7 @@ public class NCatGetController {
                     group.put("owner_id", groupObj.get("owner_id"));
                     group.put("avatar", groupObj.get("avatar"));
                     group.put("create_time", groupObj.get("create_time"));
-                    
+
                     groups.add(group);
                 }
             }
@@ -257,7 +256,7 @@ public class NCatGetController {
 
             // 解析响应
             JSONObject jsonResponse = JSON.parseObject(apiResponse.getBody());
-            
+
             if (jsonResponse.containsKey("status") && !jsonResponse.getString("status").equals("ok")) {
                 String errorMsg = jsonResponse.getString("message");
                 log.error("NapCat API 返回错误: {}", errorMsg);
@@ -270,7 +269,7 @@ public class NCatGetController {
             // 提取用户数据
             JSONObject dataObj = jsonResponse.getJSONObject("data");
             Map<String, Object> userInfo = new HashMap<>();
-            
+
             if (dataObj != null) {
                 userInfo.put("user_id", dataObj.get("user_id"));
                 userInfo.put("nickname", dataObj.get("nickname"));

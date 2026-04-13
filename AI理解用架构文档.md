@@ -30,7 +30,7 @@ Spring WebSocket Server (ws://localhost:8090/onebot)
 
 **数据源链路**:
 - MySQL: jdbc:mysql://115.190.170.56:3306/ldsperson
-- 用户: LDS7871 | 密码: 375279901
+- 用户: LDS7871 | 密码: 0000
 - 驱动: com.mysql.cj.jdbc.Driver
 
 ---

@@ -10,7 +10,7 @@ public class WebSocketConstants {
     public static final String LOCAL_WS_URL = "ws://localhost:8090" + LOCAL_WS_ENDPOINT;
 
     // ==================== 远程 NapCat 服务器 ====================
-    public static final String REMOTE_NAPCAT_URL = "ws://115.190.170.56:3001";
+    public static final String REMOTE_NAPCAT_URL = "ws://0.0.0.0:3001";
 
     // ==================== 心跳配置 ====================
     public static final int HEARTBEAT_INTERVAL_MS = 25000; // 25秒（NapCat 推荐 30秒）

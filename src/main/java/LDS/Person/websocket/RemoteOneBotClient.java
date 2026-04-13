@@ -10,12 +10,13 @@ import LDS.Person.websocket.config.WebSocketConstants;
 
 /**
  * OneBot 远程客户端 - 连接到远程 NapCat 服务器并转发消息到 Spring WebSocket
- * 架构：NapCat (ws://115.190.170.56:3001?access_token=xxx) -> RemoteOneBotClient -> Spring Server (ws://localhost:8090/onebot)
+ * 架构：NapCat (ws://115.190.170.56:3001?access_token=xxx) -> RemoteOneBotClient
+ * -> Spring Server (ws://localhost:8090/onebot)
  */
 public class RemoteOneBotClient extends BaseWebSocketClient {
 
     private static String WS_URL_REMOTE;
-    
+
     // 从配置文件加载 WebSocket URL
     static {
         Properties props = new Properties();
@@ -23,7 +24,7 @@ public class RemoteOneBotClient extends BaseWebSocketClient {
                 .getResourceAsStream("config.properties")) {
             if (input != null) {
                 props.load(input);
-                WS_URL_REMOTE = props.getProperty("WS_URL_REMOTE", "ws://115.190.170.56:3001");
+                WS_URL_REMOTE = props.getProperty("WS_URL_REMOTE", "ws://0.0.0.0:3001");
                 System.out.println("[CONFIG] 远程 WebSocket URL: " + WS_URL_REMOTE);
             } else {
                 WS_URL_REMOTE = WebSocketConstants.REMOTE_NAPCAT_URL;
@@ -72,4 +73,3 @@ public class RemoteOneBotClient extends BaseWebSocketClient {
         }
     }
 }
-

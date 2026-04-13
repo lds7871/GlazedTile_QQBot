@@ -22,16 +22,16 @@ import java.util.Properties;
 @Component
 @Slf4j
 public class RandomChatLogic {
-    
+
     // 存储最近一次的群聊ID
     private static volatile String lastGroupId = null;
-    
+
     @Autowired
     private RestTemplate restTemplate;
-    
+
     private static String NCAT_API_BASE;
     private static String NCAT_AUTH_TOKEN;
-    
+
     // 静态初始化块：从 config.properties 读取配置
     static {
         Properties props = new Properties();
@@ -42,24 +42,24 @@ public class RandomChatLogic {
                 NCAT_API_BASE = props.getProperty("NapCatApiBase", "http://0.0.0.0:3000");
                 NCAT_AUTH_TOKEN = props.getProperty("NapCatAuthToken", "");
             } else {
-                log.warn("[RandomChatLogic] config.properties not found, using default values");
+                System.err.println("[RandomChatLogic] config.properties not found, using default values");
                 NCAT_API_BASE = "http://0.0.0.0:3000";
                 NCAT_AUTH_TOKEN = "";
             }
         } catch (Exception e) {
-            log.error("[RandomChatLogic] Failed to load config.properties: {}", e.getMessage());
+            System.err.println("[RandomChatLogic] Failed to load config.properties: " + e.getMessage());
             NCAT_API_BASE = "http://0.0.0.0:3000";
             NCAT_AUTH_TOKEN = "";
         }
     }
-    
+
     /**
      * 记录最近一次的群聊ID
      */
     public static void recordLastGroupId(String groupId) {
         lastGroupId = groupId;
     }
-    
+
     /**
      * 获取最近一次的群聊ID
      */
@@ -76,24 +76,24 @@ public class RandomChatLogic {
     private String callDeepSeekAPI(String prompt) {
         try {
             String apiKey = System.getenv("DEEPSEEK_API_KEY");
-            
+
             if (apiKey == null || apiKey.isEmpty()) {
                 log.error("[RandomChatLogic] DEEPSEEK_API_KEY 未设置");
                 return null;
             }
-            
+
             DSchatNcatQQ chatClient = new DSchatNcatQQ(apiKey);
             String response = chatClient.Usedeepseek(prompt);
-            
+
             // log.info("[RandomChatLogic] DeepSeek API 生成结果: {}", response);
             return response;
-            
+
         } catch (Exception e) {
             log.error("[RandomChatLogic] 调用 DeepSeek API 异常: {}", e.getMessage(), e);
             return null;
         }
     }
-    
+
     /**
      * 生成随机群聊消息并发送
      */
@@ -109,46 +109,45 @@ public class RandomChatLogic {
             // 调用 DeepSeek 生成对话
             String prompt = "生成一句无关紧要的科普对话，不要带引号";
             String randomMessage = callDeepSeekAPI(prompt);
-            
+
             if (randomMessage == null || randomMessage.isEmpty()) {
                 log.warn("[RandomChatLogic] 生成的随机对话为空，跳过发送");
                 return;
             }
-            
+
             // 发送到群聊
             sendGroupMessage(groupId, randomMessage);
-            
+
         } catch (Exception e) {
             log.error("[RandomChatLogic] 生成随机对话时出错: {}", e.getMessage(), e);
         }
     }
-    
+
     /**
      * 发送群聊消息
      */
     private void sendGroupMessage(String groupId, String message) {
         try {
             String url = NCAT_API_BASE + "/send_group_msg";
-            
+
             // 构建请求体
             JSONObject requestBody = new JSONObject();
             requestBody.put("group_id", Long.parseLong(groupId));
             requestBody.put("message", message);
-            
-            
+
             HttpHeaders headers = new HttpHeaders();
             headers.set("Authorization", NCAT_AUTH_TOKEN);
             headers.set("Content-Type", "application/json");
-            
+
             HttpEntity<String> entity = new HttpEntity<>(requestBody.toJSONString(), headers);
             ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
-            
+
             if (response.getStatusCode() == HttpStatus.OK) {
                 // log.info("[RandomChatLogic] 成功发送随机对话到群 {}", groupId);
             } else {
                 log.error("[RandomChatLogic] 群聊消息发送失败 - 状态码: {}", response.getStatusCode());
             }
-            
+
         } catch (Exception e) {
             log.error("[RandomChatLogic] 发送群聊消息异常: {}", e.getMessage(), e);
         }

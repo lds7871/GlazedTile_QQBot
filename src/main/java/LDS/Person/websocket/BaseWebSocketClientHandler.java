@@ -1,21 +1,23 @@
-package LDS.Person.websocket.base;
+package LDS.Person.websocket;
 
 import java.net.URI;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import lombok.extern.slf4j.Slf4j;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 
 /**
  * WebSocket 客户端基类 - 提供通用的连接、收发消息功能
  */
+@Slf4j
 public abstract class BaseWebSocketClientHandler extends WebSocketClient {
 
     protected CountDownLatch connectionLatch;
     protected volatile boolean isConnected = false;
 
-    public BaseWebSocketClientHandler(URI uri) {
+    protected BaseWebSocketClientHandler(URI uri) {
         super(uri);
         this.connectionLatch = new CountDownLatch(1);
     }
@@ -30,20 +32,19 @@ public abstract class BaseWebSocketClientHandler extends WebSocketClient {
     @Override
     public void onOpen(ServerHandshake handshakeData) {
         isConnected = true;
-        logConnectionOpened(handshakeData);
+        log.info("WebSocket 连接已打开，状态码: {}", handshakeData.getHttpStatus());
         connectionLatch.countDown();
     }
 
     @Override
     public void onClose(int code, String reason, boolean remote) {
         isConnected = false;
-        logConnectionClosed(code, reason, remote);
+        log.info("WebSocket 连接已关闭，代码: {}，原因: {}，远程: {}", code, reason, remote);
     }
 
     @Override
     public void onError(Exception ex) {
-        logError(ex);
-        ex.printStackTrace();
+        log.error("WebSocket 错误: {}", ex.getMessage(), ex);
     }
 
     /**
@@ -62,31 +63,5 @@ public abstract class BaseWebSocketClientHandler extends WebSocketClient {
      */
     public boolean isConnected() {
         return isConnected && this.isOpen();
-    }
-
-    // ==================== 子类实现的日志方法 ====================
-
-    /**
-     * 连接打开时的日志
-     */
-    protected abstract void logConnectionOpened(ServerHandshake handshakeData);
-
-    /**
-     * 连接关闭时的日志
-     */
-    protected abstract void logConnectionClosed(int code, String reason, boolean remote);
-
-    /**
-     * 错误日志 (String)
-     */
-    protected void logError(String msg) {
-        System.err.println("[WEBSOCKET] " + msg);
-    }
-
-    /**
-     * 错误日志 (Exception)
-     */
-    protected void logError(Exception ex) {
-        System.err.println("[WEBSOCKET] 错误: " + ex.getMessage());
     }
 }

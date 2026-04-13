@@ -4,6 +4,7 @@ import java.net.URI;
 
 import LDS.Person.config.ConfigManager;
 import LDS.Person.tasks.MsgLisATTask;
+import LDS.Person.tasks.MsgLisCmdTask;
 import LDS.Person.util.OneBotMessageFormatter;
 import com.alibaba.fastjson2.JSONObject;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +20,7 @@ public class RemoteOneBotClient extends BaseWebSocketClient {
 
     private static final String WS_URL_REMOTE;
     private static MsgLisATTask msgLisATTask;
+    private static MsgLisCmdTask msgLisCmdTask;
 
     static {
         WS_URL_REMOTE = ConfigManager.getInstance().getWsUrlRemote();
@@ -30,6 +32,13 @@ public class RemoteOneBotClient extends BaseWebSocketClient {
      */
     public static void setMessageListenerTask(MsgLisATTask task) {
         msgLisATTask = task;
+    }
+
+    /**
+     * 设置消息命令任务（由 Spring 容器注入）
+     */
+    public static void setMessageCmdTask(MsgLisCmdTask task) {
+        msgLisCmdTask = task;
     }
 
     @Override
@@ -84,6 +93,11 @@ public class RemoteOneBotClient extends BaseWebSocketClient {
                     // 触发消息监听任务
                     if (msgLisATTask != null) {
                         msgLisATTask.handleMessage(json);
+                    }
+
+                    // 触发消息命令任务
+                    if (msgLisCmdTask != null) {
+                        msgLisCmdTask.handleMessage(json);
                     }
                 }
 

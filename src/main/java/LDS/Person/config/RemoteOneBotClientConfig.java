@@ -9,6 +9,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import LDS.Person.tasks.MsgLisATTask;
+import LDS.Person.tasks.MsgLisCmdTask;
 import LDS.Person.websocket.RemoteOneBotClient;
 import lombok.extern.slf4j.Slf4j;
 
@@ -25,6 +26,9 @@ public class RemoteOneBotClientConfig {
 
     @Autowired
     private MsgLisATTask msgLisATTask;
+
+    @Autowired
+    private MsgLisCmdTask msgLisCmdTask;
 
     private static final boolean NCAT_IS_OPEN;
 
@@ -51,6 +55,8 @@ public class RemoteOneBotClientConfig {
             log.info("开始启动远程 OneBot 客户端...");
             RemoteOneBotClient.setMessageListenerTask(msgLisATTask);
             log.info("消息监听任务已注入");
+            RemoteOneBotClient.setMessageCmdTask(msgLisCmdTask);
+            log.info("消息命令任务已注入");
 
             if (!client.isConnected()) {
                 client.start();

@@ -18,9 +18,15 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 
+import jakarta.annotation.PreDestroy;
+
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -57,9 +63,37 @@ public class MsgLisCmdTask {
   private static final long RETRY_BASE_DELAY_MS = 1000L;
   private static final long SERVER_ERROR_RETRY_DELAY_MS = 2000L;
 
+  /**
+   * PUBG 命令专用单线程执行器
+   * 使用单线程保证 PUBG 查询按提交顺序依次执行，
+   * 同时不阻塞 WebSocket 消息处理线程，确保其它任务可正常调度。
+   */
+  private final ExecutorService pubgExecutor = Executors.newSingleThreadExecutor(r -> {
+    Thread t = new Thread(r, "pubg-query-worker");
+    return t;
+  });
+
   static {
     // 初始化关键词处理器映射
     // 示例: logicHandlers.put("负载-", GetSystemInfoLogic.class);
+  }
+
+  /**
+   * 应用关闭时优雅停止 PUBG 执行器
+   */
+  @PreDestroy
+  public void shutdown() {
+    log.info("正在关闭 PUBG 命令执行器...");
+    pubgExecutor.shutdown();
+    try {
+      if (!pubgExecutor.awaitTermination(30, TimeUnit.SECONDS)) {
+        pubgExecutor.shutdownNow();
+      }
+    } catch (InterruptedException e) {
+      pubgExecutor.shutdownNow();
+      Thread.currentThread().interrupt();
+    }
+    log.info("PUBG 命令执行器已关闭");
   }
 
   /**
@@ -154,8 +188,16 @@ public class MsgLisCmdTask {
           sendErrorMessage(groupId, "命令格式错误，请使用: PUBG-{username}");
           return;
         }
-        GetPUBGLogic logic = new GetPUBGLogic();
-        result = logic.execute(pubgCommand);
+        // 异步提交到专用单线程执行器，不阻塞当前消息处理线程
+        // 多次 PUBG 请求会排队，按提交顺序依次执行
+        log.info("PUBG 查询已提交到异步队列: {} (群ID: {})", pubgCommand, groupId);
+        try {
+          pubgExecutor.submit(() -> executePubgCommand(groupId, pubgCommand));
+        } catch (RejectedExecutionException e) {
+          log.warn("PUBG 执行器已关闭，无法处理查询: {}", pubgCommand);
+          sendErrorMessage(groupId, "服务正在关闭，无法处理 PUBG 查询");
+        }
+        return;
       }
       // 后续可添加更多关键词对应的逻辑
       // else if ("-状态".equals(keyword)) {
@@ -173,6 +215,28 @@ public class MsgLisCmdTask {
     } catch (Exception e) {
       log.error("处理命令异常 - 关键词: {}, 群ID: {}", keyword, groupId, e);
       sendErrorMessage(groupId, "处理命令异常: " + e.getMessage());
+    }
+  }
+
+  /**
+   * 在专用线程中执行 PUBG 查询并发送结果
+   *
+   * @param groupId     群组 ID
+   * @param pubgCommand PUBG 命令（如 "PUBG-username"）
+   */
+  private void executePubgCommand(Long groupId, String pubgCommand) {
+    try {
+      GetPUBGLogic logic = new GetPUBGLogic();
+      Object result = logic.execute(pubgCommand);
+
+      if (result instanceof CmdExecutionResult) {
+        handleCommandResult(groupId, (CmdExecutionResult) result);
+      } else if (result != null) {
+        log.warn("PUBG 查询返回未知结果类型: {}", result.getClass().getName());
+      }
+    } catch (Exception e) {
+      log.error("PUBG 异步查询异常 - 命令: {}, 群ID: {}", pubgCommand, groupId, e);
+      sendErrorMessage(groupId, "PUBG 查询异常: " + e.getMessage());
     }
   }
 

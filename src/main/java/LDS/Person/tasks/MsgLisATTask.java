@@ -34,10 +34,10 @@ public class MsgLisATTask {
     private static final String NCAT_API_BASE = configManager.getNapCatApiBase();
     private static final String NCAT_AUTH_TOKEN = configManager.getNapCatAuthToken();
     private static final String BOT_QQ_ID = configManager.getNapcatQQID();
-    
+
     // 重试相关常量
-    private static final long RETRY_BASE_DELAY_MS = 1000L;          // 基础重试延迟（毫秒）
-    private static final long SERVER_ERROR_RETRY_DELAY_MS = 2000L;  // 服务器错误重试延迟（毫秒）
+    private static final long RETRY_BASE_DELAY_MS = 1000L; // 基础重试延迟（毫秒）
+    private static final long SERVER_ERROR_RETRY_DELAY_MS = 2000L; // 服务器错误重试延迟（毫秒）
 
     /**
      * 处理接收到的 WebSocket 消息
@@ -48,7 +48,7 @@ public class MsgLisATTask {
     public void handleMessage(JSONObject message) {
         // 检查该任务是否启用
         if (!NapCatTaskIsOpen.isMsgLisATTask) {
-          //  System.out.println("isMsgLisATTask未启用");
+            // System.out.println("isMsgLisATTask未启用");
             return;
         }
 
@@ -144,9 +144,9 @@ public class MsgLisATTask {
 
             // // 如果发送成功，有五分之一的概率发送固定图片
             // if (success) {
-            //     if (shouldSendImage()) {
-            //         sendGroupFixedImage(groupId);
-            //     }
+            // if (shouldSendImage()) {
+            // sendGroupFixedImage(groupId);
+            // }
             // }
 
         } catch (Exception e) {
@@ -275,7 +275,8 @@ public class MsgLisATTask {
     private void sendGroupFixedImage(Long groupId) {
         try {
             String keyWord = "BIGHead"; // 默认关键字
-            String url = "http://localhost:8090/api/ncat/send/group-fixed-image?groupId=" + groupId + "&keyWord=" + keyWord;
+            String url = "http://localhost:8090/api/ncat/send/group-fixed-image?groupId=" + groupId + "&keyWord="
+                    + keyWord;
             // log.info("调用固定图片接口，群ID: {}，关键字: {}", groupId, keyWord);
 
             HttpHeaders headers = new HttpHeaders();

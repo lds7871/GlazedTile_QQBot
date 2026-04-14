@@ -2,6 +2,7 @@ package LDS.Person.tasks.MsgSchLogic;
 
 import LDS.Person.config.ConfigManager;
 import LDS.Person.util.DSchatNcatQQ;
+import LDS.Person.tasks.TaskFactory;
 import com.alibaba.fastjson2.JSONObject;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,22 +22,12 @@ import org.springframework.web.client.RestTemplate;
 @Slf4j
 public class RandomChatLogic {
 
-    private static volatile String lastGroupId = null;
-
     @Autowired
     private RestTemplate restTemplate;
 
     private static final ConfigManager CONFIG = ConfigManager.getInstance();
     private static final String NCAT_API_BASE = CONFIG.getNapCatApiBase();
     private static final String NCAT_AUTH_TOKEN = CONFIG.getNapCatAuthToken();
-
-    public static void recordLastGroupId(String groupId) {
-        lastGroupId = groupId;
-    }
-
-    public static String getLastGroupId() {
-        return lastGroupId;
-    }
 
     /**
      * 调用 DeepSeek API 生成对话
@@ -72,8 +63,9 @@ public class RandomChatLogic {
      */
     public void generateAndSendRandomChat() {
         try {
-            String groupId = getLastGroupId();
-            System.out.println("[RandomChatLogic] getLastGroupId() 返回: " + groupId);
+            // 从 TaskFactory 获取最近一次活动的群聊ID
+            String groupId = TaskFactory.getLastActiveGroupId();
+            System.out.println("[RandomChatLogic] TaskFactory.getLastActiveGroupId() 返回: " + groupId);
 
             if (groupId == null || groupId.isEmpty()) {
                 System.out.println("[RandomChatLogic]  未记录到群聊ID，跳过发送");

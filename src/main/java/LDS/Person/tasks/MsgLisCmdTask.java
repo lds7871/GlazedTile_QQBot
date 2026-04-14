@@ -65,7 +65,7 @@ public class MsgLisCmdTask {
    */
   public void handleMessage(JSONObject message) {
     // 检查该任务是否启用
-    if (!NapCatTaskIsOpen.isMsgLisATTask) {
+    if (!NapCatTaskIsOpen.isMsgLisCmdTask) {
       return;
     }
 

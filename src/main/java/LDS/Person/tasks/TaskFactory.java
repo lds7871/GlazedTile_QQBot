@@ -41,8 +41,44 @@ public final class TaskFactory {
     private static final long RETRY_BASE_DELAY_MS = 1000L;
     private static final long SERVER_ERROR_RETRY_DELAY_MS = 2000L;
 
+    // ==================== 最近活动群聊信息 ====================
+    private static volatile String lastActiveGroupId = null;
+    private static volatile String lastActiveGroupName = null;
+
     private TaskFactory() {
         // 工具类，禁止实例化
+    }
+
+    // ==================== 最近活动群聊管理 ====================
+
+    /**
+     * 记录最近一次活动的群聊信息
+     * 由消息处理器调用
+     * 
+     * @param groupId   群聊ID
+     * @param groupName 群聊名称
+     */
+    public static void recordActiveGroupChat(String groupId, String groupName) {
+        lastActiveGroupId = groupId;
+        lastActiveGroupName = groupName;
+    }
+
+    /**
+     * 获取最近一次活动的群聊ID
+     * 
+     * @return 群聊ID，如果没有记录过则返回 null
+     */
+    public static String getLastActiveGroupId() {
+        return lastActiveGroupId;
+    }
+
+    /**
+     * 获取最近一次活动的群聊名称
+     * 
+     * @return 群聊名称，如果没有记录过则返回 null
+     */
+    public static String getLastActiveGroupName() {
+        return lastActiveGroupName;
     }
 
     // ==================== 任务开关检查 ====================
@@ -50,15 +86,22 @@ public final class TaskFactory {
     /**
      * 检查消息监听任务是否启用
      */
-    public static boolean isListenerTaskEnabled() {
+    public static boolean isListenerATTaskEnabled() {
         return NapCatTaskIsOpen.isMsgLisATTask;
     }
 
     /**
      * 检查定时任务是否启用
      */
-    public static boolean isScheduledTaskEnabled() {
-        return NapCatTaskIsOpen.isMsgSchTask;
+    public static boolean isScheduledHumanTaskEnabled() {
+        return NapCatTaskIsOpen.isMsgSchHumanTask;
+    }
+
+    /**
+     * 检查定时任务是否启用
+     */
+    public static boolean isListenerCmdTaskEnabled() {
+        return NapCatTaskIsOpen.isMsgLisCmdTask;
     }
 
     // ==================== 消息解析工具 ====================

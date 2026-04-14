@@ -12,12 +12,14 @@ import org.slf4j.LoggerFactory;
 @Component
 public class NapCatTaskIsOpen {
     public static boolean isMsgLisATTask = true;
-    public static boolean isMsgSchTask = true;
+    public static boolean isMsgSchHumanTask = true;
+    public static boolean isMsgLisCmdTask = true;
 
     private static final Logger log = LoggerFactory.getLogger(NapCatTaskIsOpen.class);
 
     public NapCatTaskIsOpen() {
-        log.info("NapCatTaskIsOpen 初始化完成: isMsgLisATTask={}, isMsgSchTask={}", 
-                isMsgLisATTask, isMsgSchTask);
+        log.info("NapCatTaskIsOpen 初始化完成: @监听任务={}, 随机模拟任务={}, 指令监听任务={}",
+                isMsgLisATTask, isMsgSchHumanTask, isMsgLisCmdTask);
+
     }
 }

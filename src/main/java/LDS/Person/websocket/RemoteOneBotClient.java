@@ -5,6 +5,7 @@ import java.net.URI;
 import LDS.Person.config.ConfigManager;
 import LDS.Person.tasks.MsgLisATTask;
 import LDS.Person.tasks.MsgLisCmdTask;
+import LDS.Person.tasks.MsgSchHumanTask;
 import LDS.Person.util.OneBotMessageFormatter;
 import com.alibaba.fastjson2.JSONObject;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +22,7 @@ public class RemoteOneBotClient extends BaseWebSocketClient {
     private static final String WS_URL_REMOTE;
     private static MsgLisATTask msgLisATTask;
     private static MsgLisCmdTask msgLisCmdTask;
+    private static MsgSchHumanTask msgSchHumanTask;
 
     static {
         WS_URL_REMOTE = ConfigManager.getInstance().getWsUrlRemote();
@@ -39,6 +41,13 @@ public class RemoteOneBotClient extends BaseWebSocketClient {
      */
     public static void setMessageCmdTask(MsgLisCmdTask task) {
         msgLisCmdTask = task;
+    }
+
+    /**
+     * 设置消息调度任务（由 Spring 容器注入）
+     */
+    public static void setMessageScheduleTask(MsgSchHumanTask task) {
+        msgSchHumanTask = task;
     }
 
     @Override
@@ -89,6 +98,9 @@ public class RemoteOneBotClient extends BaseWebSocketClient {
                 if (!isHeartbeat && !isStatusResponse) {
                     String formattedMessage = OneBotMessageFormatter.formatMessage(json);
                     log.info("[REMOTE] {}", formattedMessage);
+
+                    // 记录最近一次活动的群聊信息
+                    MsgSchHumanTask.recordActiveGroupInfo(json);
 
                     // 触发消息监听任务
                     if (msgLisATTask != null) {

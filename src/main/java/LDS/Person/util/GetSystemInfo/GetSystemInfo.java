@@ -172,6 +172,16 @@ public class GetSystemInfo {
     currentY = drawMetricLine(g2d, "充电状态:", data.getChargeStatus(), leftX, rightX, currentY, lineHeight);
     currentY = drawMetricLine(g2d, "外电源:", data.isPowerOnLine() ? "已连接" : "未连接", leftX, rightX, currentY, lineHeight);
 
+    // === 项目数据 ===
+    currentY += 10;
+    currentY = drawSection(g2d, "▶ 项目数据", new Color(26, 188, 156), leftX, currentY, lineHeight);
+    currentY = drawMetricLine(g2d, "@消息监听:", data.isIsMsgLisATTask() ? "启用" : "禁用", leftX, rightX, currentY,
+        lineHeight);
+    currentY = drawMetricLine(g2d, "随机模拟任务:", data.isIsMsgSchHumanTask() ? "启用" : "禁用", leftX, rightX, currentY,
+        lineHeight);
+    currentY = drawMetricLine(g2d, "指令监听任务:", data.isIsMsgLisCmdTask() ? "启用" : "禁用", leftX, rightX, currentY,
+        lineHeight);
+
     // 底部分隔线
     g2d.setColor(new Color(200, 200, 200));
     g2d.drawLine(30, currentY + 10, CHART_WIDTH - 30, currentY + 10);
@@ -257,5 +267,10 @@ public class GetSystemInfo {
     System.out.println("    - 剩余: " + String.format("%.2f%%", data.getRemainingCapacityPercent() * 100));
     System.out.println("    - 电压: " + String.format("%.2f V", data.getVoltage()));
     System.out.println("    - 状态: " + data.getChargeStatus() + " (" + (data.isPowerOnLine() ? "外电源已连接" : "使用电池") + ")");
+
+    System.out.println("  项目数据:");
+    System.out.println("    - @消息监听: " + (data.isIsMsgLisATTask() ? "启用" : "禁用"));
+    System.out.println("    - 模拟人类任务: " + (data.isIsMsgSchHumanTask() ? "启用" : "禁用"));
+    System.out.println("    - 指令监听任务: " + (data.isIsMsgLisCmdTask() ? "启用" : "禁用"));
   }
 }

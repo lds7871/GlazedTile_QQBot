@@ -3,6 +3,7 @@ package LDS.Person.tasks;
 import LDS.Person.config.NapCatTaskIsOpen;
 import LDS.Person.tasks.MsgSchLogic.RandomChatLogic;
 import LDS.Person.tasks.MsgLisLogic.KeywordTriggerLogic;
+import com.alibaba.fastjson2.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -26,13 +27,38 @@ public class MsgSchHumanTask {
     private static final Random random = new Random();
 
     /**
+     * 记录最近一次活动的群聊信息
+     * 在接收到群聊消息时调用此方法
+     * 
+     * @param message WebSocket 消息的 JSON 对象
+     */
+    public static void recordActiveGroupInfo(JSONObject message) {
+        try {
+            String messageType = message.getString("message_type");
+
+            // 只处理群聊消息
+            if (!"group".equals(messageType)) {
+                return;
+            }
+
+            Long groupId = message.getLong("group_id");
+            String groupName = message.getString("group_name");
+
+            // 记录到 TaskFactory
+            TaskFactory.recordActiveGroupChat(String.valueOf(groupId), groupName);
+        } catch (Exception e) {
+            // 记录失败不影响其他功能
+        }
+    }
+
+    /**
      * 每分钟执行一次，检查是否需要触发随机对话
      * 执行时间：每小时内随机选择一个时间（9点到22点）
      */
     @Scheduled(cron = "0 * 9-21 * * *")
     public void scheduleRandomChat() {
         // 检查该任务是否启用
-        if (!NapCatTaskIsOpen.isMsgSchTask) {
+        if (!NapCatTaskIsOpen.isMsgSchHumanTask) {
             // System.out.println("isMsgSchTask未启用");
             return;
         }
@@ -54,7 +80,7 @@ public class MsgSchHumanTask {
 
             if (randomValue == currentMinute) {
                 System.out.println("[MsgSchTask] ！！！触发随机对话任务，当前时间: " + currentTime);
-                System.out.println("[MsgSchTask] lastGroupId = " + RandomChatLogic.getLastGroupId());
+                System.out.println("[MsgSchTask] lastGroupId = " + TaskFactory.getLastActiveGroupId());
 
                 // 50% 概率触发随机对话，50% 概率触发随机图片
                 boolean sendChat = random.nextBoolean();
@@ -65,7 +91,7 @@ public class MsgSchHumanTask {
                 } else {
                     // 触发随机图片
                     System.out.println("[MsgSchTask]  选择发送随机图片");
-                    String groupId = RandomChatLogic.getLastGroupId();
+                    String groupId = TaskFactory.getLastActiveGroupId();
                     System.out.println("[MsgSchTask] 准备发送图片，groupId = " + groupId);
                     if (groupId != null && !groupId.isEmpty()) {
                         keywordTriggerLogic.triggerRandomImage(Long.parseLong(groupId));

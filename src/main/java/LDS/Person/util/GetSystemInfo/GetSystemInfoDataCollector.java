@@ -49,6 +49,11 @@ public class GetSystemInfoDataCollector implements Serializable {
   private double disk0UsagePercent;
   private String disk0Name;
 
+  // =============== 项目数据信息 ===============
+  private boolean isMsgLisATTask;
+  private boolean isMsgSchHumanTask;
+  private boolean isMsgLisCmdTask;
+
   // =============== 收集方法 ===============
 
   /**
@@ -70,6 +75,9 @@ public class GetSystemInfoDataCollector implements Serializable {
 
     // 性能指标（CPU、内存、磁盘）
     collectPerformanceInfo(hal, os);
+
+    // 项目数据信息
+    collectProjectInfo();
 
     return this;
   }
@@ -145,6 +153,37 @@ public class GetSystemInfoDataCollector implements Serializable {
 
       setDisk0Name(store.getName());
       setDisk0UsagePercent(diskPercent);
+    }
+  }
+
+  /**
+   * 收集项目数据信息 - 从 NapCatTaskIsOpen 获取任务开关状态
+   */
+  private void collectProjectInfo() {
+    try {
+      // 通过反射获取 NapCatTaskIsOpen 类的字段
+      Class<?> clazz = Class.forName("LDS.Person.config.NapCatTaskIsOpen");
+
+      // 获取 isMsgLisATTask
+      java.lang.reflect.Field field1 = clazz.getDeclaredField("isMsgLisATTask");
+      field1.setAccessible(true);
+      setIsMsgLisATTask(field1.getBoolean(null));
+
+      // 获取 isMsgSchHumanTask
+      java.lang.reflect.Field field2 = clazz.getDeclaredField("isMsgSchHumanTask");
+      field2.setAccessible(true);
+      setIsMsgSchHumanTask(field2.getBoolean(null));
+
+      // 获取 isMsgLisCmdTask
+      java.lang.reflect.Field field3 = clazz.getDeclaredField("isMsgLisCmdTask");
+      field3.setAccessible(true);
+      setIsMsgLisCmdTask(field3.getBoolean(null));
+
+    } catch (Exception e) {
+      // 如果无法获取，设置默认值
+      setIsMsgLisATTask(false);
+      setIsMsgSchHumanTask(false);
+      setIsMsgLisCmdTask(false);
     }
   }
 
@@ -340,6 +379,30 @@ public class GetSystemInfoDataCollector implements Serializable {
 
   public void setDisk0Name(String disk0Name) {
     this.disk0Name = disk0Name;
+  }
+
+  public boolean isIsMsgLisATTask() {
+    return isMsgLisATTask;
+  }
+
+  public void setIsMsgLisATTask(boolean isMsgLisATTask) {
+    this.isMsgLisATTask = isMsgLisATTask;
+  }
+
+  public boolean isIsMsgSchHumanTask() {
+    return isMsgSchHumanTask;
+  }
+
+  public void setIsMsgSchHumanTask(boolean isMsgSchHumanTask) {
+    this.isMsgSchHumanTask = isMsgSchHumanTask;
+  }
+
+  public boolean isIsMsgLisCmdTask() {
+    return isMsgLisCmdTask;
+  }
+
+  public void setIsMsgLisCmdTask(boolean isMsgLisCmdTask) {
+    this.isMsgLisCmdTask = isMsgLisCmdTask;
   }
 
   @Override

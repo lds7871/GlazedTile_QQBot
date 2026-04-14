@@ -4,6 +4,7 @@ import LDS.Person.config.NapCatTaskIsOpen;
 import LDS.Person.config.ConfigManager;
 import LDS.Person.tasks.MsgLisCmdLogic.GetSystemInfoLogic;
 import LDS.Person.tasks.MsgLisCmdLogic.GetSystemInfoLogic.CmdExecutionResult;
+import LDS.Person.tasks.MsgLisCmdLogic.GetPUBGLogic;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +21,8 @@ import org.springframework.web.client.RestTemplate;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * 消息命令处理任务
@@ -38,6 +41,8 @@ import java.util.Map;
 @Slf4j
 public class MsgLisCmdTask {
 
+  private static final Pattern PUBG_COMMAND_PATTERN = Pattern.compile("PUBG-([^\\s]+)", Pattern.CASE_INSENSITIVE);
+
   @Autowired
   private RestTemplate restTemplate;
 
@@ -54,7 +59,7 @@ public class MsgLisCmdTask {
 
   static {
     // 初始化关键词处理器映射
-    // 示例: logicHandlers.put("-负载", GetSystemInfoLogic.class);
+    // 示例: logicHandlers.put("负载-", GetSystemInfoLogic.class);
   }
 
   /**
@@ -111,8 +116,12 @@ public class MsgLisCmdTask {
     }
 
     // 检查预定义的关键词
-    if (message.contains("-负载")) {
-      return "-负载";
+    if (message.contains("负载-")) {
+      return "负载-";
+    }
+
+    if (extractPubgCommand(message) != null) {
+      return "PUBG-";
     }
 
     // 后续可在此处添加更多关键词检查
@@ -136,9 +145,17 @@ public class MsgLisCmdTask {
       Object result = null;
 
       // 根据关键词调用相应的处理器
-      if ("-负载".equals(keyword)) {
+      if ("负载-".equals(keyword)) {
         GetSystemInfoLogic logic = new GetSystemInfoLogic(restTemplate);
         result = logic.execute(keyword);
+      } else if ("PUBG-".equals(keyword)) {
+        String pubgCommand = extractPubgCommand(message);
+        if (pubgCommand == null) {
+          sendErrorMessage(groupId, "命令格式错误，请使用: PUBG-{username}");
+          return;
+        }
+        GetPUBGLogic logic = new GetPUBGLogic();
+        result = logic.execute(pubgCommand);
       }
       // 后续可添加更多关键词对应的逻辑
       // else if ("-状态".equals(keyword)) {
@@ -157,6 +174,22 @@ public class MsgLisCmdTask {
       log.error("处理命令异常 - 关键词: {}, 群ID: {}", keyword, groupId, e);
       sendErrorMessage(groupId, "处理命令异常: " + e.getMessage());
     }
+  }
+
+  private String extractPubgCommand(String message) {
+    if (message == null || message.isEmpty()) {
+      return null;
+    }
+
+    Matcher matcher = PUBG_COMMAND_PATTERN.matcher(message);
+    if (matcher.find()) {
+      String username = matcher.group(1).trim();
+      if (!username.isEmpty()) {
+        return "PUBG-" + username;
+      }
+    }
+
+    return null;
   }
 
   /**

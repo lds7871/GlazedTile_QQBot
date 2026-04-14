@@ -208,7 +208,19 @@
             <artifactId>oshi-core</artifactId>
             <version>6.4.8</version>
         </dependency>
+        <!-- Selenium：浏览器自动化工具，用于处理JavaScript和WAF验证 -->
+        <dependency>
+            <groupId>org.seleniumhq.selenium</groupId>
+            <artifactId>selenium-java</artifactId>
+            <version>4.15.0</version>
+        </dependency>
 
+        <!-- WebDriver Manager：自动管理浏览器驱动版本，避免版本不匹配问题 -->
+        <dependency>
+            <groupId>io.github.bonigarcia</groupId>
+            <artifactId>webdrivermanager</artifactId>
+            <version>5.6.3</version>
+        </dependency>
 
     </dependencies>
 

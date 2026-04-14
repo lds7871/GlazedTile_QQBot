@@ -181,6 +181,8 @@ public class GetSystemInfo {
         lineHeight);
     currentY = drawMetricLine(g2d, "指令监听任务:", data.isIsMsgLisCmdTask() ? "启用" : "禁用", leftX, rightX, currentY,
         lineHeight);
+    currentY = drawMetricLine(g2d, "最近活动群聊:", data.getLastActiveGroupName(), leftX, rightX, currentY,
+        lineHeight);
 
     // 底部分隔线
     g2d.setColor(new Color(200, 200, 200));
@@ -272,5 +274,6 @@ public class GetSystemInfo {
     System.out.println("    - @消息监听: " + (data.isIsMsgLisATTask() ? "启用" : "禁用"));
     System.out.println("    - 模拟人类任务: " + (data.isIsMsgSchHumanTask() ? "启用" : "禁用"));
     System.out.println("    - 指令监听任务: " + (data.isIsMsgLisCmdTask() ? "启用" : "禁用"));
+    System.out.println("    - 最近活动群聊: " + data.getLastActiveGroupName());
   }
 }

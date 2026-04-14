@@ -53,6 +53,7 @@ public class GetSystemInfoDataCollector implements Serializable {
   private boolean isMsgLisATTask;
   private boolean isMsgSchHumanTask;
   private boolean isMsgLisCmdTask;
+  private String lastActiveGroupName;
 
   // =============== 收集方法 ===============
 
@@ -157,7 +158,7 @@ public class GetSystemInfoDataCollector implements Serializable {
   }
 
   /**
-   * 收集项目数据信息 - 从 NapCatTaskIsOpen 获取任务开关状态
+   * 收集项目数据信息 - 从 NapCatTaskIsOpen 获取任务开关状态，从 TaskFactory 获取最近活动群聊名称
    */
   private void collectProjectInfo() {
     try {
@@ -184,6 +185,17 @@ public class GetSystemInfoDataCollector implements Serializable {
       setIsMsgLisATTask(false);
       setIsMsgSchHumanTask(false);
       setIsMsgLisCmdTask(false);
+    }
+
+    // 获取 TaskFactory 中的最近活动群聊名称
+    try {
+      Class<?> taskFactoryClass = Class.forName("LDS.Person.tasks.TaskFactory");
+      java.lang.reflect.Method method = taskFactoryClass.getDeclaredMethod("getLastActiveGroupName");
+      method.setAccessible(true);
+      Object result = method.invoke(null);
+      setLastActiveGroupName(result != null ? (String) result : "未记录");
+    } catch (Exception e) {
+      setLastActiveGroupName("未知");
     }
   }
 
@@ -403,6 +415,14 @@ public class GetSystemInfoDataCollector implements Serializable {
 
   public void setIsMsgLisCmdTask(boolean isMsgLisCmdTask) {
     this.isMsgLisCmdTask = isMsgLisCmdTask;
+  }
+
+  public String getLastActiveGroupName() {
+    return lastActiveGroupName;
+  }
+
+  public void setLastActiveGroupName(String lastActiveGroupName) {
+    this.lastActiveGroupName = lastActiveGroupName;
   }
 
   @Override

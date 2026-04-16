@@ -153,6 +153,44 @@ public class PubgUserInfoWithSelenium {
     }
 
     /**
+     * 页面打开后每秒轮询查找 renewBtn，找到后点击并等待页面刷新。
+     */
+    private static void pollAndClickRenewButton(WebDriver driver, int maxPollingSeconds) {
+        System.out.println("开始轮询查找 renewBtn 按钮...");
+
+        for (int i = 0; i < maxPollingSeconds; i++) {
+            try {
+                List<WebElement> renewButtons = driver.findElements(By.id("renewBtn"));
+                if (!renewButtons.isEmpty()) {
+                    WebElement renewBtn = renewButtons.get(0);
+                    if (renewBtn.isDisplayed() && renewBtn.isEnabled()) {
+                        renewBtn.click();
+                        System.out.println("已点击 renewBtn，等待页面刷新...");
+                        Thread.sleep(2500);
+                        return;
+                    }
+                }
+
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                System.out.println("轮询 renewBtn 被中断，继续后续流程");
+                return;
+            } catch (Exception e) {
+                System.out.println("轮询 renewBtn 时出现异常，继续轮询: " + e.getMessage());
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException interruptedException) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+            }
+        }
+
+        System.out.println("未检测到 renewBtn，继续后续流程");
+    }
+
+    /**
      * 生成PUBG用户信息图表
      */
     private static String generateAndSavePubgChart(PubgUserStats stats, String imgFolder) {
@@ -684,7 +722,7 @@ public class PubgUserInfoWithSelenium {
             // 配置Edge选项
             EdgeOptions options = new EdgeOptions();
             // 可选：添加无头模式（不显示浏览器窗口）
-            options.addArguments("--headless");
+            // options.addArguments("--headless");
             options.addArguments("--no-sandbox");
             options.addArguments("--disable-dev-shm-usage");
             options.addArguments("--disable-blink-features=AutomationControlled");
@@ -695,6 +733,9 @@ public class PubgUserInfoWithSelenium {
             String url = BASE_URL + username;
             System.out.println("开始访问: " + url);
             driver.get(url);
+
+            // 页面打开后先轮询 renewBtn，若存在则点击触发刷新
+            pollAndClickRenewButton(driver, 30);
 
             // 等待页面加载完成（等待AWS WAF验证完成）
             // 等待challenge页面消失或数据加载完成
@@ -747,7 +788,7 @@ public class PubgUserInfoWithSelenium {
     public static void main(String[] args) {
         System.out.println("========== PUBG用户信息获取 (使用Selenium) ==========\n");
 
-        String username = "Yukiyuki_My_Wife";
+        String username = "Arisu137";
         System.out.println("正在获取用户: " + username);
         System.out.println("请耐心等待，浏览器会自动打开并完成验证...\n");
 

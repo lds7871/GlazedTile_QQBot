@@ -82,23 +82,33 @@ public class MsgSchHumanTask {
                 System.out.println("[MsgSchTask] ！！！触发随机对话任务，当前时间: " + currentTime);
                 System.out.println("[MsgSchTask] lastGroupId = " + TaskFactory.getLastActiveGroupId());
 
-                // 50% 概率触发随机对话，50% 概率触发随机图片
-                boolean sendChat = random.nextBoolean();
-                if (sendChat) {
-                    // 触发随机对话
-                    System.out.println("[MsgSchTask]  选择发送随机对话");
-                    randomChatLogic.generateAndSendRandomChat();
+                // 50% 概率触发随机对话，50% 概率触发随机图片============================================
+                // boolean sendChat = random.nextBoolean();
+                // if (sendChat) {
+                // // 触发随机对话
+                // System.out.println("[MsgSchTask] 选择发送随机对话");
+                // randomChatLogic.generateAndSendRandomChat();
+                // } else {
+                // // 触发随机图片
+                // System.out.println("[MsgSchTask] 选择发送随机图片");
+                // String groupId = TaskFactory.getLastActiveGroupId();
+                // System.out.println("[MsgSchTask] 准备发送图片，groupId = " + groupId);
+                // if (groupId != null && !groupId.isEmpty()) {
+                // keywordTriggerLogic.triggerRandomImage(Long.parseLong(groupId));
+                // } else {
+                // System.out.println("[MsgSchTask] groupId 为空，跳过发送图片");
+                // }
+                // }
+                // 触发随机图片=========================================================================
+                System.out.println("[MsgSchTask]  选择发送随机图片");
+                String groupId = TaskFactory.getLastActiveGroupId();
+                System.out.println("[MsgSchTask] 准备发送图片，groupId = " + groupId);
+                if (groupId != null && !groupId.isEmpty()) {
+                    keywordTriggerLogic.triggerRandomImage(Long.parseLong(groupId));
                 } else {
-                    // 触发随机图片
-                    System.out.println("[MsgSchTask]  选择发送随机图片");
-                    String groupId = TaskFactory.getLastActiveGroupId();
-                    System.out.println("[MsgSchTask] 准备发送图片，groupId = " + groupId);
-                    if (groupId != null && !groupId.isEmpty()) {
-                        keywordTriggerLogic.triggerRandomImage(Long.parseLong(groupId));
-                    } else {
-                        System.out.println("[MsgSchTask]  groupId 为空，跳过发送图片");
-                    }
+                    System.out.println("[MsgSchTask]  groupId 为空，跳过发送图片");
                 }
+
             }
 
         } catch (Exception e) {

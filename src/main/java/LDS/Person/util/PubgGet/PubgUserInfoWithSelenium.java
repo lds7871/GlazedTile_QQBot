@@ -166,7 +166,7 @@ public class PubgUserInfoWithSelenium {
                     if (renewBtn.isDisplayed() && renewBtn.isEnabled()) {
                         renewBtn.click();
                         System.out.println("已点击 renewBtn，等待页面刷新...");
-                        Thread.sleep(2500);
+                        Thread.sleep(5000);
                         return;
                     }
                 }
@@ -722,7 +722,7 @@ public class PubgUserInfoWithSelenium {
             // 配置Edge选项
             EdgeOptions options = new EdgeOptions();
             // 可选：添加无头模式（不显示浏览器窗口）
-            // options.addArguments("--headless");
+            options.addArguments("--headless");
             options.addArguments("--no-sandbox");
             options.addArguments("--disable-dev-shm-usage");
             options.addArguments("--disable-blink-features=AutomationControlled");

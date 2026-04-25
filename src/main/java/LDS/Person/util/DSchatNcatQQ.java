@@ -24,7 +24,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  */
 
 public class DSchatNcatQQ {
-    private static final String BASE_URL = "https://api.deepseek.com";//  https://api.deepseek.com/v3.2_speciale_expires_on_20251215
+    private static final String BASE_URL = "https://api.deepseek.com";// https://api.deepseek.com/v3.2_speciale_expires_on_20251215
     private static final ObjectMapper mapper = new ObjectMapper();
     private static final int MAX_HISTORY = 15; // 最多保存15条消息（节省token）
     private static final Map<String, ArrayNode> conversationHistory = new ConcurrentHashMap<>();
@@ -174,7 +174,7 @@ public class DSchatNcatQQ {
         payload.put("model", model);
         payload.set("messages", messages);
         payload.put("stream", false);
-        payload.put("temperature", 1.4);
+        payload.put("temperature", 1);
 
         String body = mapper.writeValueAsString(payload);
 
@@ -227,11 +227,11 @@ public class DSchatNcatQQ {
 
         // 构建消息数组（多轮对话格式）
         ArrayNode messages = mapper.createArrayNode();
-        
+
         // 添加 System 角色（可选）
         ObjectNode sys = mapper.createObjectNode();
         sys.put("role", "system");
-        sys.put("content", " ");//你的设定是胆小但又贴心的学妹兼助手。名字是\"科罗娜\"。接收消息格式是\"用户昵称：内容\"。回复时只输出对话内容，不要添加\"用户\"、昵称或任何前缀。
+        sys.put("content", " ");// 你的设定是胆小但又贴心的学妹兼助手。名字是\"科罗娜\"。接收消息格式是\"用户昵称：内容\"。回复时只输出对话内容，不要添加\"用户\"、昵称或任何前缀。
         messages.add(sys);
 
         // 添加共享的完整对话历史（包括之前的所有对话）
@@ -247,7 +247,7 @@ public class DSchatNcatQQ {
 
         // 调用 DeepSeek API
         DSchatNcatQQ client = new DSchatNcatQQ(key);
-        String resp = client.createChatCompletion("deepseek-chat", messages);
+        String resp = client.createChatCompletion("deepseek-v4-flash", messages);
 
         // 添加 AI 回复到共享历史
         addMessageToHistory(sharedContextKey, "assistant", resp);
@@ -282,7 +282,7 @@ public class DSchatNcatQQ {
         user.put("content", 输入文本);
         messages.add(user);
 
-        String resp = client.createChatCompletion("deepseek-chat", messages);
+        String resp = client.createChatCompletion("deepseek-v4-flash", messages);
         return resp;
     }
 
@@ -309,10 +309,8 @@ public class DSchatNcatQQ {
         user.put("content", 输入文本);
         messages.add(user);
 
-        String resp = client.createChatCompletion("deepseek-chat", messages);
+        String resp = client.createChatCompletion("deepseek-v4-flash", messages);
         return resp;
     }
-
-
 
 }

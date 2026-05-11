@@ -19,15 +19,17 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 
+import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 
 import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -57,8 +59,22 @@ public class MsgLisCmdTask {
   private static final String NCAT_API_BASE = configManager.getNapCatApiBase();
   private static final String NCAT_AUTH_TOKEN = configManager.getNapCatAuthToken();
 
-  // 关键词与处理器的映射
-  private static final Map<String, Object> logicHandlers = new HashMap<>();
+  /**
+   * 指令描述符：封装指令的匹配逻辑和执行逻辑
+   * <p>
+   * name 指令名称（用于日志）<br>
+   * extractor 从消息中提取指令参数，不匹配时返回 null<br>
+   * executor 执行指令 (groupId, extractedArg)
+   */
+  private record CommandEntry(
+      String name,
+      Function<String, String> extractor,
+      BiConsumer<Long, String> executor) {
+  }
+
+  // ==================== 指令注册区 ====================
+  // 新增指令：在此列表中添加 CommandEntry，无需修改其他任何方法
+  private List<CommandEntry> commands;
 
   // 重试相关常量
   private static final long RETRY_BASE_DELAY_MS = 1000L;
@@ -73,11 +89,6 @@ public class MsgLisCmdTask {
     Thread t = new Thread(r, "pubg-query-worker");
     return t;
   });
-
-  static {
-    // 初始化关键词处理器映射
-    // 示例: logicHandlers.put("负载-", GetSystemInfoLogic.class);
-  }
 
   /**
    * 应用关闭时优雅停止 PUBG 执行器
@@ -95,6 +106,64 @@ public class MsgLisCmdTask {
       Thread.currentThread().interrupt();
     }
     log.info("PUBG 命令执行器已关闭");
+  }
+
+  /**
+   * 初始化指令注册列表
+   * 所有指令集中在此处配置和管理，新增指令只需在此处添加 CommandEntry 即可
+   */
+  @PostConstruct
+  private void initCommands() {
+    commands = List.of(
+
+        // ── 系统负载查询 ──────────────────────────────────────
+        // 触发关键词: 消息中包含 "负载-"
+        new CommandEntry(
+            "系统负载",
+            msg -> msg.contains("负载-") ? "负载-" : null,
+            (groupId, arg) -> {
+              GetSystemInfoLogic logic = new GetSystemInfoLogic(restTemplate);
+              Object result = logic.execute(arg);
+              if (result instanceof CmdExecutionResult r)
+                handleCommandResult(groupId, r);
+            }),
+
+        // ── PUBG 战绩查询 ─────────────────────────────────────
+        // 触发格式: PUBG-{用户名}（不区分大小写）
+        new CommandEntry(
+            "PUBG战绩",
+            this::extractPubgCommand,
+            (groupId, pubgCommand) -> {
+              log.info("PUBG 查询已提交到异步队列: {} (群ID: {})", pubgCommand, groupId);
+              try {
+                pubgExecutor.submit(() -> executePubgCommand(groupId, pubgCommand));
+              } catch (RejectedExecutionException e) {
+                log.warn("PUBG 执行器已关闭，无法处理查询: {}", pubgCommand);
+                sendErrorMessage(groupId, "服务正在关闭，无法处理 PUBG 查询");
+              }
+            }),
+
+        // ── 语音合成 ──────────────────────────────────────────
+        // 触发格式: 语音_{说话人}-{文本内容}
+        new CommandEntry(
+            "语音合成",
+            msg -> msg.startsWith("语音_") ? msg : null,
+            (groupId, msg) -> {
+              String[] voiceCmd = extractVoiceCommand(msg);
+              if (voiceCmd == null) {
+                sendErrorMessage(groupId, "命令格式错误，请使用: 语音_{说话人}-{文本内容}");
+                return;
+              }
+              log.info("语音合成已提交 - 说话人: [{}]，群ID: {}", voiceCmd[0], groupId);
+              try {
+                pubgExecutor.submit(() -> executeVoiceCommand(groupId, voiceCmd[0], voiceCmd[1]));
+              } catch (RejectedExecutionException e) {
+                log.warn("执行器已关闭，无法处理语音合成");
+                sendErrorMessage(groupId, "服务正在关闭，无法处理语音合成");
+              }
+            })
+
+    );
   }
 
   /**
@@ -127,115 +196,25 @@ public class MsgLisCmdTask {
       Long groupId = message.getLong("group_id");
       String rawMessage = message.getString("raw_message");
 
-      // 检查消息中是否包含命令关键词
-      String matchedKeyword = findMatchedKeyword(rawMessage);
-      if (matchedKeyword != null) {
-        log.info("检测到命令关键词: '{}' 在群ID: {} 中", matchedKeyword, groupId);
-        handleCommand(groupId, matchedKeyword, rawMessage);
+      // 遍历指令注册列表，找到匹配的指令并执行
+      if (rawMessage != null && !rawMessage.isEmpty()) {
+        for (CommandEntry entry : commands) {
+          String arg = entry.extractor().apply(rawMessage);
+          if (arg != null) {
+            log.info("检测到指令 [{}] 在群ID: {} 中", entry.name(), groupId);
+            try {
+              entry.executor().accept(groupId, arg);
+            } catch (Exception e) {
+              log.error("执行指令 [{}] 异常 - 群ID: {}", entry.name(), groupId, e);
+              sendErrorMessage(groupId, "处理命令异常: " + e.getMessage());
+            }
+            break;
+          }
+        }
       }
 
     } catch (Exception e) {
       log.error("处理消息异常", e);
-    }
-  }
-
-  /**
-   * 检查消息中是否包含已注册的关键词
-   * 
-   * @param message 消息内容
-   * @return 匹配的关键词，如果没有匹配返回 null
-   */
-  private String findMatchedKeyword(String message) {
-    if (message == null || message.isEmpty()) {
-      return null;
-    }
-
-    // 检查预定义的关键词
-    if (message.contains("负载-")) {
-      return "负载-";
-    }
-
-    if (extractPubgCommand(message) != null) {
-      return "PUBG-";
-    }
-
-    if (extractVoiceCommand(message) != null) {
-      return "语音_";
-    }
-
-    // 后续可在此处添加更多关键词检查
-    // if (message.contains("-状态")) {
-    // return "-状态";
-    // }
-
-    return null;
-  }
-
-  /**
-   * 处理命令
-   * 根据关键词调用相应的处理器，并处理返回结果
-   * 
-   * @param groupId 群组 ID
-   * @param keyword 触发的关键词
-   * @param message 完整消息
-   */
-  private void handleCommand(Long groupId, String keyword, String message) {
-    try {
-      Object result = null;
-
-      // 根据关键词调用相应的处理器
-      if ("负载-".equals(keyword)) {
-        GetSystemInfoLogic logic = new GetSystemInfoLogic(restTemplate);
-        result = logic.execute(keyword);
-      } else if ("PUBG-".equals(keyword)) {
-        String pubgCommand = extractPubgCommand(message);
-        if (pubgCommand == null) {
-          sendErrorMessage(groupId, "命令格式错误，请使用: PUBG-{username}");
-          return;
-        }
-        // 异步提交到专用单线程执行器，不阻塞当前消息处理线程
-        // 多次 PUBG 请求会排队，按提交顺序依次执行
-        log.info("PUBG 查询已提交到异步队列: {} (群ID: {})", pubgCommand, groupId);
-        try {
-          pubgExecutor.submit(() -> executePubgCommand(groupId, pubgCommand));
-        } catch (RejectedExecutionException e) {
-          log.warn("PUBG 执行器已关闭，无法处理查询: {}", pubgCommand);
-          sendErrorMessage(groupId, "服务正在关闭，无法处理 PUBG 查询");
-        }
-        return;
-      } else if ("语音_".equals(keyword)) {
-        String[] voiceCmd = extractVoiceCommand(message);
-        if (voiceCmd == null) {
-          sendErrorMessage(groupId, "命令格式错误，请使用: 语音_{说话人}-{文本内容}");
-          return;
-        }
-        String speaker = voiceCmd[0];
-        String text = voiceCmd[1];
-        log.info("语音合成已提交 - 说话人: [{}]，群ID: {}", speaker, groupId);
-        try {
-          pubgExecutor.submit(() -> executeVoiceCommand(groupId, speaker, text));
-        } catch (RejectedExecutionException e) {
-          log.warn("执行器已关闭，无法处理语音合成");
-          sendErrorMessage(groupId, "服务正在关闭，无法处理语音合成");
-        }
-        return;
-      }
-      // 后续可添加更多关键词对应的逻辑
-      // else if ("-状态".equals(keyword)) {
-      // YourLogic logic = new YourLogic(restTemplate);
-      // result = logic.execute(keyword);
-      // }
-
-      // 处理执行结果
-      if (result instanceof CmdExecutionResult) {
-        handleCommandResult(groupId, (CmdExecutionResult) result);
-      } else if (result != null) {
-        log.warn("未知的执行结果类型: {}", result.getClass().getName());
-      }
-
-    } catch (Exception e) {
-      log.error("处理命令异常 - 关键词: {}, 群ID: {}", keyword, groupId, e);
-      sendErrorMessage(groupId, "处理命令异常: " + e.getMessage());
     }
   }
 

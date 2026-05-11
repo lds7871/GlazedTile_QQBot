@@ -32,7 +32,7 @@ public class CreateSoundLogic implements IMsgLisCmdLogic {
       String soundBase64 = CreateSound.generateSound(text, speaker);
 
       if (soundBase64 == null) {
-        return CmdExecutionResult.failure("语音合成失败，请稍后重试");
+        return CmdExecutionResult.failure("语音合成失败");
       }
 
       CmdExecutionResult result = CmdExecutionResult.success("语音合成成功");

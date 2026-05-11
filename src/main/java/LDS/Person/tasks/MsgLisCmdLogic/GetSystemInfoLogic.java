@@ -100,6 +100,7 @@ public class GetSystemInfoLogic implements IMsgLisCmdLogic {
     private boolean success;
     private String message;
     private String imagePath;
+    private String soundFile;
 
     public CmdExecutionResult(boolean success, String message) {
       this.success = success;
@@ -143,6 +144,14 @@ public class GetSystemInfoLogic implements IMsgLisCmdLogic {
 
     public void setImagePath(String imagePath) {
       this.imagePath = imagePath;
+    }
+
+    public String getSoundFile() {
+      return soundFile;
+    }
+
+    public void setSoundFile(String soundFile) {
+      this.soundFile = soundFile;
     }
   }
 }

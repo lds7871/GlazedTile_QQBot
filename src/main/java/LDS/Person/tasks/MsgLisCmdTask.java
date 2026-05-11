@@ -5,6 +5,7 @@ import LDS.Person.config.ConfigManager;
 import LDS.Person.tasks.MsgLisCmdLogic.GetSystemInfoLogic;
 import LDS.Person.tasks.MsgLisCmdLogic.GetSystemInfoLogic.CmdExecutionResult;
 import LDS.Person.tasks.MsgLisCmdLogic.GetPUBGLogic;
+import LDS.Person.tasks.MsgLisCmdLogic.CreateSoundLogic;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import lombok.extern.slf4j.Slf4j;
@@ -158,6 +159,10 @@ public class MsgLisCmdTask {
       return "PUBG-";
     }
 
+    if (extractVoiceCommand(message) != null) {
+      return "语音_";
+    }
+
     // 后续可在此处添加更多关键词检查
     // if (message.contains("-状态")) {
     // return "-状态";
@@ -196,6 +201,22 @@ public class MsgLisCmdTask {
         } catch (RejectedExecutionException e) {
           log.warn("PUBG 执行器已关闭，无法处理查询: {}", pubgCommand);
           sendErrorMessage(groupId, "服务正在关闭，无法处理 PUBG 查询");
+        }
+        return;
+      } else if ("语音_".equals(keyword)) {
+        String[] voiceCmd = extractVoiceCommand(message);
+        if (voiceCmd == null) {
+          sendErrorMessage(groupId, "命令格式错误，请使用: 语音_{说话人}-{文本内容}");
+          return;
+        }
+        String speaker = voiceCmd[0];
+        String text = voiceCmd[1];
+        log.info("语音合成已提交 - 说话人: [{}]，群ID: {}", speaker, groupId);
+        try {
+          pubgExecutor.submit(() -> executeVoiceCommand(groupId, speaker, text));
+        } catch (RejectedExecutionException e) {
+          log.warn("执行器已关闭，无法处理语音合成");
+          sendErrorMessage(groupId, "服务正在关闭，无法处理语音合成");
         }
         return;
       }
@@ -258,23 +279,23 @@ public class MsgLisCmdTask {
 
   /**
    * 处理命令执行结果
-   * 根据结果发送相应的回复和图片
-   * 
+   * 根据结果发送相应的回复、图片或语音
+   *
    * @param groupId 群组 ID
    * @param result  命令执行结果
    */
   private void handleCommandResult(Long groupId, CmdExecutionResult result) {
     try {
       if (result.isSuccess()) {
-        // 如果包含图片路径，发送图片
-        if (result.getImagePath() != null && !result.getImagePath().isEmpty()) {
+        // 优先判断语音
+        if (result.getSoundFile() != null && !result.getSoundFile().isEmpty()) {
+          sendGroupSound(groupId, result.getSoundFile());
+        } else if (result.getImagePath() != null && !result.getImagePath().isEmpty()) {
           sendGroupImage(groupId, result.getImagePath());
         } else {
-          // 否则发送文本消息
           sendGroupMessage(groupId, result.getMessage());
         }
       } else {
-        // 发送错误消息
         sendErrorMessage(groupId, result.getMessage());
       }
     } catch (Exception e) {
@@ -307,6 +328,96 @@ public class MsgLisCmdTask {
     } catch (Exception e) {
       log.error("发送图片消息异常 - 群ID: {}", groupId, e);
     }
+  }
+
+  /**
+   * 在专用线程中执行语音合成并发送结果
+   *
+   * @param groupId 群组 ID
+   * @param speaker 说话人
+   * @param text    文本内容
+   */
+  private void executeVoiceCommand(Long groupId, String speaker, String text) {
+    try {
+      CreateSoundLogic logic = new CreateSoundLogic(speaker, text);
+      Object result = logic.execute("语音_");
+      if (result instanceof CmdExecutionResult) {
+        handleCommandResult(groupId, (CmdExecutionResult) result);
+      }
+    } catch (Exception e) {
+      log.error("语音合成异步执行异常 - 说话人: {}，群ID: {}", speaker, groupId, e);
+      sendErrorMessage(groupId, "语音合成异常: " + e.getMessage());
+    }
+  }
+
+  /**
+   * 从消息中解析语音指令
+   * 格式: 语音_{说话人}-{文本内容}
+   *
+   * @param message 消息内容
+   * @return [speaker, text] 数组，格式不匹配时返回 null
+   */
+  private String[] extractVoiceCommand(String message) {
+    if (message == null || !message.startsWith("语音_")) {
+      return null;
+    }
+    String content = message.substring("语音_".length());
+    int dashIndex = content.indexOf('-');
+    if (dashIndex <= 0 || dashIndex >= content.length() - 1) {
+      return null;
+    }
+    String speaker = content.substring(0, dashIndex).trim();
+    String text = content.substring(dashIndex + 1).trim();
+    if (speaker.isEmpty() || text.isEmpty()) {
+      return null;
+    }
+    return new String[] { speaker, text };
+  }
+
+  /**
+   * 发送语音消息到群聊
+   *
+   * @param groupId   群组 ID
+   * @param soundFile base64:// 格式的语音数据
+   */
+  private void sendGroupSound(Long groupId, String soundFile) {
+    try {
+      log.info("准备向群ID: {} 发送语音消息", groupId);
+
+      JSONObject requestBody = buildSoundMessageRequest(groupId, soundFile);
+      boolean success = sendMessageWithRetry(groupId, requestBody, 2);
+
+      if (!success) {
+        log.error("语音消息发送失败 - 群ID: {}", groupId);
+      }
+    } catch (Exception e) {
+      log.error("发送语音消息异常 - 群ID: {}", groupId, e);
+    }
+  }
+
+  /**
+   * 构建语音消息请求体
+   *
+   * @param groupId   群组 ID
+   * @param soundFile base64:// 格式的语音数据
+   * @return 请求 JSON
+   */
+  private JSONObject buildSoundMessageRequest(Long groupId, String soundFile) {
+    JSONObject request = new JSONObject();
+    request.put("group_id", groupId);
+
+    JSONArray messageArray = new JSONArray();
+    JSONObject soundItem = new JSONObject();
+    soundItem.put("type", "record");
+
+    JSONObject dataObj = new JSONObject();
+    dataObj.put("file", soundFile);
+    soundItem.put("data", dataObj);
+
+    messageArray.add(soundItem);
+    request.put("message", messageArray);
+
+    return request;
   }
 
   /**

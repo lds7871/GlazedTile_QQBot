@@ -184,7 +184,7 @@ public class ConfigManager {
     }
 
     public String getWsUrlLocal() {
-        return getString("WS_URL_LOCAL", "ws://localhost:8090/onebot");
+        return getString("WS_URL_LOCAL", "ws://localhost:9200/onebot");
     }
 
     public String getWsUrlRemote() {

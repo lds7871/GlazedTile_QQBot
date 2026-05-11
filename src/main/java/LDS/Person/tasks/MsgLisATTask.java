@@ -275,7 +275,7 @@ public class MsgLisATTask {
     private void sendGroupFixedImage(Long groupId) {
         try {
             String keyWord = "BIGHead"; // 默认关键字
-            String url = "http://localhost:8090/api/ncat/send/group-fixed-image?groupId=" + groupId + "&keyWord="
+            String url = "http://localhost:9200/api/ncat/send/group-fixed-image?groupId=" + groupId + "&keyWord="
                     + keyWord;
             // log.info("调用固定图片接口，群ID: {}，关键字: {}", groupId, keyWord);
 

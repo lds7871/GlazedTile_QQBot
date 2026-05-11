@@ -12,7 +12,7 @@
     ↓ [WebSocket 连接]
 RemoteOneBotClient (远程消息客户端)
     ↓ [消息转发]
-Spring 本地服务器 (ws://localhost:8090/onebot)
+Spring 本地服务器 (ws://localhost:9200/onebot)
     ↓ [路由分发]
 消息处理系统 (MsgLisATTask, KeywordTriggerLogic等)
     ↓ [异步处理]
@@ -115,7 +115,7 @@ NapCat API (send_group_msg 等)
 #### OneBotWebSocketHandler (@Component)
 ```
 作用: Spring本地 WebSocket 服务器的消息处理器
-监听地址: ws://localhost:8090/onebot
+监听地址: ws://localhost:9200/onebot
 
 功能:
   - afterConnectionEstablished() - 客户端连接时记录 session
@@ -656,7 +656,7 @@ if (TaskFactory.isAtBot(rawMessage)) {
 
 | 配置项 | 值 | 说明 |
 |-------|-----|------|
-| spring.port | 8090 | Spring 本地服务端口 |
+| spring.port | 9200 | Spring 本地服务端口 |
 | NapCat ApiURL | http://115.190.170.56:3000 | NapCat API基础地址 |
 | NapCat WebSocket | ws://115.190.170.56:3001 | NapCat通信服务器 |
 | 重试基础延迟 | 1000ms | 消息发送失败的重试等待 |
@@ -754,11 +754,11 @@ mvn spring-boot:run -Dspring-boot.run.jvmArguments="-Dfile.encoding=GBK"
 ```
 
 **常用调试端点**:
-- 连接状态: http://localhost:8090/api/onebot/status
-- 配置信息: http://localhost:8090/api/onebot/config
-- 对话历史: http://localhost:8090/api/onebot/conversation-history
-- 服务信息: http://localhost:8090/api/serverinfo/startup
-- API文档: http://localhost:8090/swagger-ui.html
+- 连接状态: http://localhost:9200/api/onebot/status
+- 配置信息: http://localhost:9200/api/onebot/config
+- 对话历史: http://localhost:9200/api/onebot/conversation-history
+- 服务信息: http://localhost:9200/api/serverinfo/startup
+- API文档: http://localhost:9200/swagger-ui.html
 
 ---
 

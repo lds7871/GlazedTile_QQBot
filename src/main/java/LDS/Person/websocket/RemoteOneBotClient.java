@@ -14,7 +14,7 @@ import org.java_websocket.handshake.ServerHandshake;
 /**
  * OneBot 远程客户端 - 连接到远程 NapCat 服务器并转发消息到 Spring WebSocket
  * 架构：NapCat (ws://remote:3001?access_token=xxx) -> RemoteOneBotClient
- * -> Spring Server (ws://localhost:8090/onebot)
+ * -> Spring Server (ws://localhost:9200/onebot)
  */
 @Slf4j
 public class RemoteOneBotClient extends BaseWebSocketClient {

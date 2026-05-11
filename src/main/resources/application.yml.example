@@ -50,7 +50,7 @@ security:
 #   max-age: 3600
 
 server:
-  port: 8090
+  port: 9200
   servlet:
     context-path: /
 

@@ -5,7 +5,7 @@ echo     部署环境安全访问测试
 echo ========================================
 
 REM 设置测试URL - 请根据实际部署地址修改
-set TEST_URL=http://localhost:8090
+set TEST_URL=http://localhost:9200
 
 echo.
 echo 测试目标: %TEST_URL%

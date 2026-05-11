@@ -7,7 +7,7 @@ public class WebSocketConstants {
 
     // ==================== 本地 Spring 服务器 ====================
     public static final String LOCAL_WS_ENDPOINT = "/onebot";
-    public static final String LOCAL_WS_URL = "ws://localhost:8090" + LOCAL_WS_ENDPOINT;
+    public static final String LOCAL_WS_URL = "ws://localhost:9200" + LOCAL_WS_ENDPOINT;
 
     // ==================== 远程 NapCat 服务器 ====================
     public static final String REMOTE_NAPCAT_URL = "ws://0.0.0.0:3001";
